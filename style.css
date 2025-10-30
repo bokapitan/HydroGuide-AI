@@ -1,0 +1,190 @@
+/* Basic Reset and Global Styles */
+:root {
+    --primary-color: #007bff; /* A nice blue for hydration/tech */
+    --secondary-color: #f8f9fa; /* Light grey background */
+    --text-color: #333;
+    --border-radius: 8px;
+    --success-color: #28a745;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    padding: 20px;
+}
+
+/* Header Styling */
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px 0;
+    border-bottom: 2px solid var(--primary-color);
+}
+
+header h1 {
+    color: var(--primary-color);
+    font-size: 2.5em;
+    margin-bottom: 5px;
+}
+
+/* Main Layout and Form */
+main {
+    max-width: 500px;
+    margin: 0 auto;
+    background: white;
+    padding: 30px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+#hydrationInputForm p {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+input[type="number"],
+select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1em;
+}
+
+/* Button Styling (Primary) */
+#calculateBtn {
+    display: block;
+    width: 100%;
+    padding: 15px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#calculateBtn:hover {
+    background-color: #0056b3;
+}
+
+/* Secondary Button Styling (New) */
+.secondary-btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin-top: 15px;
+    background-color: #fff;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+    border-radius: 4px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.secondary-btn:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Data Collected Section Styling (F1) */
+#dataCollected {
+    margin-top: 30px;
+    padding: 20px;
+    border: 1px dashed var(--primary-color);
+    border-radius: var(--border-radius);
+    background-color: #e6f0ff; /* Lightest blue */
+}
+
+#dataCollected h3 {
+    color: var(--primary-color);
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+#dataCollected ul {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 15px;
+}
+
+#dataCollected li {
+    padding: 5px 0;
+}
+
+/* Result Section Styling (F2) */
+#resultDisplay {
+    margin-top: 30px;
+    padding: 25px;
+    background-color: var(--success-color);
+    color: white;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+#resultDisplay h3 {
+    color: white;
+    margin-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+    padding-bottom: 10px;
+}
+
+.goal-output {
+    font-size: 3em;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.next-step-message {
+    font-style: italic;
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Footer Styling */
+footer {
+    text-align: center;
+    padding: 20px 0;
+    margin-top: 40px;
+    font-size: 0.8em;
+    color: #666;
+}
+
+/* Basic Responsiveness for smaller screens */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+    main {
+        padding: 20px;
+    }
+    header h1 {
+        font-size: 2em;
+    }
+}

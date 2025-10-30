@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HydroGuide AI | Personalized Input & Goal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>💧 HydroGuide AI</h1>
+        <h2>Personalized Hydration Input & Goal</h2>
+    </header>
+
+    <main>
+        <form id="hydrationInputForm">
+            <p>Tell us a little about yourself to get your **personalized daily water goal**.</p>
+            
+            <div class="form-group">
+                <label for="weight">Body Weight (in lbs):</label>
+                <input type="number" id="weight" name="weight" min="50" max="500" required>
+            </div>
+
+            <div class="form-group">
+                <label for="age">Age (in years):</label>
+                <input type="number" id="age" name="age" min="18" max="100" required>
+            </div>
+
+            <div class="form-group">
+                <label for="gender">Gender:</label>
+                <select id="gender" name="gender" required>
+                    <option value="">-- Select Gender --</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="climate">Climate:</label>
+                <select id="climate" name="climate" required>
+                    <option value="">-- Select Climate --</option>
+                    <option value="hot">Hot (Tropical)</option>
+                    <option value="moderate">Moderate</option>
+                    <option value="cold">Cold</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="activity">Activity Level:</label>
+                <select id="activity" name="activity" required>
+                    <option value="">-- Select Activity Level --</option>
+                    <option value="sedentary">Sedentary (Light Activity)</option>
+                    <option value="moderate">Moderate Activity</option>
+                    <option value="active">Active (High Activity)</option>
+                </select>
+            </div>
+
+            <button type="submit" id="calculateBtn">Calculate My Goal</button>
+        </form>
+
+        <section id="dataCollected" class="hidden">
+            <h3>✅ Data Collected!</h3>
+            <p>Your data is ready for calculation:</p>
+            <ul>
+                <li>**Weight:** <span id="outWeight"></span> lbs</li>
+                <li>**Age:** <span id="outAge"></span> years</li>
+                <li>**Gender:** <span id="outGender"></span></li>
+                <li>**Climate:** <span id="outClimate"></span></li>
+                <li>**Activity:** <span id="outActivity"></span></li>
+            </ul>
+        </section>
+
+        <section id="resultDisplay" class="hidden">
+            <h3>💧 Your Personalized Daily Water Goal</h3>
+            <div class="goal-output">
+                <span id="outGoal"></span> oz
+            </div>
+            <p class="next-step-message">This goal accounts for your weight, gender, activity, and climate, as per our algorithm's baseline.</p>
+            
+            <button id="startOverBtn" class="secondary-btn">Start Over</button>
+        </section>
+    </main>
+
+    <footer>
+        <p>Built for the MVP Challenge</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
