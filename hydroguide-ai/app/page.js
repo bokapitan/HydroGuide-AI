@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import OnboardingForm from '../components/OnboardingForm'
+import HydrationTracker from '../components/HydrationTracker'
 
 export default function Home() {
   const [session, setSession] = useState(null)
@@ -86,15 +87,14 @@ export default function Home() {
           <OnboardingForm user={session.user} onComplete={() => fetchProfile(session.user.id)} />
         ) : (
           // STATE 3: LOGGED IN & HAS PROFILE (Dashboard)
-          <div className="bg-white p-8 rounded shadow text-center">
-            <h2 className="text-2xl font-bold mb-2">Welcome Back!</h2>
-            <div className="my-6 p-6 bg-blue-100 rounded-full w-48 h-48 flex flex-col items-center justify-center mx-auto border-4 border-blue-200">
-              <span className="text-gray-600 text-sm uppercase font-bold">Daily Goal</span>
-              <span className="text-4xl font-black text-blue-700">{profile.daily_goal_oz} oz</span>
-            </div>
-            <p className="text-gray-500">
-              Your profile is active. (Tracking calendar coming next!)
-            </p>
+          <div className="space-y-6">
+             <div className="text-center">
+                <h2 className="text-2xl font-bold text-gray-800">Hi, {session.user.user_metadata.full_name.split(' ')[0]}!</h2>
+                <p className="text-gray-500">Let's hit your goal of <strong>{profile.daily_goal_oz} oz</strong> today.</p>
+             </div>
+             
+             {/* The New Tracker Component */}
+             <HydrationTracker user={session.user} dailyGoal={profile.daily_goal_oz} />
           </div>
         )}
       </main>
