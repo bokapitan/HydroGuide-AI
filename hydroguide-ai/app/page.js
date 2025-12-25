@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import OnboardingForm from '../components/OnboardingForm'
 import HydrationTracker from '../components/HydrationTracker'
+import BottleRecommender from '../components/BottleRecommender'
 
 export default function Home() {
   const [session, setSession] = useState(null)
@@ -95,6 +96,10 @@ export default function Home() {
              
              {/* The New Tracker Component */}
              <HydrationTracker user={session.user} dailyGoal={profile.daily_goal_oz} />
+           
+
+             {/* The AI Recommender */}
+             <BottleRecommender profile={profile} />
           </div>
         )}
       </main>
