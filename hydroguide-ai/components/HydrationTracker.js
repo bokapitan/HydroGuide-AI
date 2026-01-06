@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import WaveMeter from './WaveMeter'
-import { RotateCcw, Settings, Zap, Plus, Droplets, GlassWater } from 'lucide-react'
+import { RotateCcw, Settings, Zap, Droplets, GlassWater } from 'lucide-react'
 
 export default function HydrationTracker({ user, dailyGoal, onUpdate }) {
   const [todayTotal, setTodayTotal] = useState(0)
@@ -70,7 +70,6 @@ export default function HydrationTracker({ user, dailyGoal, onUpdate }) {
     },
     leftCol: {
       width: '40%',
-      // ONLY Right border. No bottom border artifact.
       borderRight: '1px solid rgba(255, 255, 255, 0.08)', 
       padding: '30px',
       display: 'flex',
@@ -148,12 +147,10 @@ export default function HydrationTracker({ user, dailyGoal, onUpdate }) {
         padding: '20px',
         boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)',
     },
-    // NEW: Glass Style for the Add Button
     glassAddBtn: {
       padding: '0 24px',
       height: '30px', 
       borderRadius: '12px',
-      // Base state: Subtle Glass
       background: 'linear-gradient(145deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
       border: '1px solid rgba(255, 255, 255, 0.1)',
       color: 'white',
@@ -166,7 +163,6 @@ export default function HydrationTracker({ user, dailyGoal, onUpdate }) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    // Active state: Vibrant Gradient
     activeAddBtn: {
       background: 'linear-gradient(135deg, #06b6d4 0%, #2563eb 100%)',
       border: 'none',
@@ -177,15 +173,53 @@ export default function HydrationTracker({ user, dailyGoal, onUpdate }) {
   return (
     <div style={styles.card}>
       
+      <style jsx>{`
+            input[type=range] {
+                -webkit-appearance: none;
+                width: 100%;
+                background: transparent;
+                cursor: pointer;
+            }
+            input[type=range]::-webkit-slider-runnable-track {
+                width: 100%;
+                height: 8px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 10px;
+            }
+            input[type=range]::-moz-range-track {
+                width: 100%;
+                height: 8px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 10px;
+            }
+            input[type=range]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                height: 20px;
+                width: 20px;
+                border-radius: 50%;
+                background: #22d3ee;
+                margin-top: -6px;
+                box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+                border: 2px solid #0f172a;
+            }
+            input[type=range]::-moz-range-thumb {
+                height: 20px;
+                width: 20px;
+                border-radius: 50%;
+                background: #22d3ee;
+                border: 2px solid #0f172a;
+                box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+            }
+      `}</style>
+      
       {/* --- LEFT VISUALS --- */}
-      {/* REMOVED ALL TAILWIND BORDER CLASSES to kill the white line */}
       <div style={styles.leftCol}>
          <div className="mb-6 text-center">
             <h2 className="text-xl font-bold text-white tracking-tight flex items-center justify-center gap-2">
                 <Droplets size={20} className="text-cyan-400"/>
                 Status
             </h2>
-            <p className="text-cyan-200/50 text-[10px] font-bold uppercase tracking-widest mt-1">
+            <p className="text-cyan-200 text-base font-black uppercase tracking-widest mt-2">
                 Goal: {safeGoal} oz
             </p>
          </div>
@@ -228,7 +262,7 @@ export default function HydrationTracker({ user, dailyGoal, onUpdate }) {
             ))}
         </div>
 
-        {/* SLIDER with Glass ADD Button */}
+        {/* SLIDER */}
         <div style={styles.sliderBox}>
              <div className="flex justify-between text-[10px] font-bold text-white/40 uppercase mb-2">
                 <span>Precision Amount</span>
@@ -240,7 +274,6 @@ export default function HydrationTracker({ user, dailyGoal, onUpdate }) {
                     type="range" min="0" max={50} 
                     value={sliderValue} 
                     onChange={(e) => setSliderValue(parseInt(e.target.value))}
-                    className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-cyan-400"
                 />
                 <button 
                     disabled={sliderValue === 0}
@@ -260,7 +293,7 @@ export default function HydrationTracker({ user, dailyGoal, onUpdate }) {
         <div className="mt-auto">
              {!isEditingBottle ? (
                 <div style={styles.bottleBox} className="group hover:bg-white/10 transition cursor-pointer">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-emerald-400 bg-emerald-400/10 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
                         <GlassWater size={20} strokeWidth={2.5} />
                     </div>
                     <div className="flex-grow">
@@ -274,11 +307,13 @@ export default function HydrationTracker({ user, dailyGoal, onUpdate }) {
                     >
                         Drink
                     </button>
+                    {/* UPDATED: Hardcoded color white on the icon */}
                     <button 
                         onClick={() => setIsEditingBottle(true)} 
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/30 hover:text-white transition"
+                        style={{ background: 'transparent', border: 'none', padding: 0 }}
+                        className="transition cursor-pointer ml-2 opacity-80 hover:opacity-100"
                     >
-                        <Settings size={16} />
+                        <Settings size={22} color="white" />
                     </button>
                 </div>
              ) : (

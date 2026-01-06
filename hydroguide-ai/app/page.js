@@ -1,167 +1,254 @@
-// app/page.js
 'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import OnboardingForm from '../components/OnboardingForm'
+import Auth from '../components/Auth'
 import HydrationTracker from '../components/HydrationTracker'
 import HistoryCalendar from '../components/HistoryCalendar'
-import BottleRecommender from '../components/BottleRecommender'
+import BottleRecommender from '../components/BottleRecommender' 
+import OnboardingForm from '../components/OnboardingForm'
+import { SlidersHorizontal, LogOut, X, Sparkles } from 'lucide-react'
 
 export default function Home() {
   const [session, setSession] = useState(null)
-  const [profile, setProfile] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [refreshTrigger, setRefreshTrigger] = useState(0)
-  const [isEditing, setIsEditing] = useState(false)
+  
+  const [dailyGoal, setDailyGoal] = useState(100)
+  const [userProfile, setUserProfile] = useState(null) 
+
+  const [showGoalModal, setShowGoalModal] = useState(false)
+  const [showAI, setShowAI] = useState(false)
+  const [refreshTrigger, setRefreshTrigger] = useState(0) 
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       if (session) fetchProfile(session.user.id)
-      else setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       if (session) fetchProfile(session.user.id)
-      else {
-        setProfile(null)
-        setLoading(false)
-      }
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
   const fetchProfile = async (userId) => {
-    try {
-      const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
-      if (data) setProfile(data)
-    } catch (error) {
-      console.log('No profile found')
-    } finally {
-      setLoading(false)
+    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
+    if (data) {
+        setDailyGoal(data.daily_goal_oz || 100) 
+        setUserProfile(data)
     }
   }
 
-  const handleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/` },
-    })
+  if (!session) return <Auth />
+
+  // --- STYLES ---
+  const styles = {
+    main: {
+      minHeight: '100vh',
+      background: 'transparent', // Let the global gradient show through
+      padding: '40px 20px',
+      fontFamily: 'sans-serif',
+      color: 'white',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+    },
+    header: {
+      width: '100%',
+      maxWidth: '1200px',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: '40px',
+    },
+    logo: {
+      fontSize: '28px',
+      fontWeight: '900',
+      background: 'linear-gradient(to right, #22d3ee, #3b82f6)',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+      letterSpacing: '-1px',
+    },
+    signOutBtn: {
+      padding: '8px 16px',
+      borderRadius: '20px',
+      background: 'rgba(255,255,255,0.05)',
+      border: '1px solid rgba(255,255,255,0.1)',
+      color: 'rgba(255,255,255,0.6)',
+      fontSize: '12px',
+      fontWeight: 'bold',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+    },
+    grid: {
+      display: 'grid',
+      gridTemplateColumns: '1.4fr 1fr', 
+      gap: '24px',
+      width: '100%',
+      maxWidth: '1200px',
+      alignItems: 'start',
+      marginBottom: '50px'
+    },
+    leftColumn: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '24px',
+    },
+    goalBtn: {
+      width: '100%',
+      padding: '24px',
+      borderRadius: '24px',
+      background: 'rgba(255, 255, 255, 0.03)',
+      backdropFilter: 'blur(10px)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.2)',
+      color: 'white',
+      fontSize: '14px',
+      fontWeight: '800',
+      textTransform: 'uppercase',
+      letterSpacing: '2px',
+      cursor: 'pointer',
+      transition: 'all 0.3s ease',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '12px',
+    },
+    aiBtnContainer: {
+        width: '100%',
+        maxWidth: '1200px',
+        display: 'flex',
+        justifyContent: 'center',
+        paddingBottom: '40px'
+    },
+    aiBtn: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      padding: '18px 40px',
+      borderRadius: '100px',
+      background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      color: 'white',
+      fontSize: '15px',
+      fontWeight: 'bold',
+      cursor: 'pointer',
+      backdropFilter: 'blur(10px)',
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+      transition: 'all 0.3s ease',
+      letterSpacing: '0.5px'
+    },
+    overlay: {
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0,0,0,0.8)',
+      backdropFilter: 'blur(8px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 50,
+    }
   }
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    setProfile(null)
-  }
-
-  const triggerRefresh = () => setRefreshTrigger(prev => prev + 1)
-
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-white animate-pulse">Loading HydroGuide...</div>
 
   return (
-    // 1. OUTER CONTAINER: Full width, padding for breathing room
-    <div className="min-h-screen w-full p-6 md:p-10">
+    <main style={styles.main}>
       
-      {/* 2. MAX WIDTH: Allows it to stretch to 1280px (7xl) for desktop dashboard feel */}
-      <div className="w-full max-w-7xl mx-auto space-y-8">
-        
-        {/* HEADER */}
-        <header className="flex justify-between items-center py-2">
-          <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg text-lg">
-                  💧
-              </div>
-              <h1 className="text-2xl font-bold text-white tracking-wide">HydroGuide</h1>
-          </div>
-          {session && (
-            <button 
-              onClick={handleLogout} 
-              className="text-sm font-semibold text-white/70 hover:text-white transition bg-white/10 px-5 py-2 rounded-full border border-white/5 hover:bg-white/20"
-            >
-              Sign Out
-            </button>
-          )}
-        </header>
-
-        {/* MAIN CONTENT AREA */}
-        <main>
-          {!session ? (
-            // LOGIN SCREEN (Centered & Compact)
-            <div className="max-w-md mx-auto mt-20">
-                <div className="glass-card p-10 text-center border-t border-white/20">
-                    <h2 className="text-3xl font-bold text-white mb-2">Welcome Back</h2>
-                    <p className="text-cyan-100/70 text-md mb-8 leading-relaxed">
-                        Your personal AI hydration coach is ready.
-                    </p>
-                    <button onClick={handleLogin} className="w-full bg-white text-slate-900 font-bold py-4 rounded-xl shadow-lg hover:scale-[1.02] transition-transform">
-                        Sign in with Google
-                    </button>
-                </div>
-            </div>
-          ) : !profile || isEditing ? ( 
-            // EDIT/ONBOARDING SCREEN (Centered & Compact)
-            <div className="max-w-md mx-auto mt-10">
-                <div className="glass-card p-8">
-                {isEditing && (
-                    <button onClick={() => setIsEditing(false)} className="mb-6 text-sm text-white/60 hover:text-white flex items-center gap-1 transition">
-                        ← Cancel
-                    </button>
-                )}
-                <OnboardingForm 
-                    user={session.user} 
-                    initialData={profile || {}} 
-                    onComplete={() => { setIsEditing(false); fetchProfile(session.user.id) }} 
-                />
-                </div>
-            </div>
-          ) : (
-            // DASHBOARD GRID
-            <div className="flex flex-col gap-6 animate-in fade-in duration-500">
-               
-               {/* TOP ROW: TRACKER + CALENDAR (Side by Side on Desktop) */}
-               <div className="grid grid-cols-1 grid-cols-2 gap-6 items-start">
-                   
-                   {/* LEFT: Tracker */}
-                   <div className="h-full">
-                        <HydrationTracker 
-                            user={session.user} 
-                            dailyGoal={profile.daily_goal_oz} 
-                            onUpdate={triggerRefresh} 
-                        />
-                   </div>
-
-                   {/* RIGHT: Calendar */}
-                   <div className="h-full">
-                        <HistoryCalendar 
-                            user={session.user} 
-                            dailyGoal={profile.daily_goal_oz} 
-                            refreshTrigger={refreshTrigger}
-                        />
-                   </div>
-               </div>
-
-               {/* BOTTOM ROW: AI Recommendations (Full Width) */}
-               <div className="w-full">
-                   <div className="glass-card p-6"> 
-                        <BottleRecommender profile={profile} />
-                   </div>
-               </div>
-
-               {/* Footer Edit Link */}
-               <div className="text-center pt-4 pb-8">
-                 <button 
-                    onClick={() => setIsEditing(true)}
-                    className="text-xs font-medium text-white/30 hover:text-white/80 transition-colors uppercase tracking-widest"
-                  >
-                    Adjust Goal Settings
-                  </button>
-               </div>
-            </div>
-          )}
-        </main>
+      <div style={styles.header}>
+        <div style={styles.logo}>💧 HydroGuide</div>
+        <button 
+          onClick={() => supabase.auth.signOut()} 
+          style={styles.signOutBtn}
+          onMouseOver={(e) => e.target.style.background = 'rgba(255,255,255,0.1)'}
+          onMouseOut={(e) => e.target.style.background = 'rgba(255,255,255,0.05)'}
+        >
+          <LogOut size={14} /> Sign Out
+        </button>
       </div>
-    </div>
+
+      <div style={styles.grid}>
+        <div style={styles.leftColumn}>
+          <HydrationTracker 
+            user={session.user} 
+            dailyGoal={dailyGoal} 
+            onUpdate={() => setRefreshTrigger(prev => prev + 1)} 
+          />
+
+          <button 
+            style={styles.goalBtn}
+            onClick={() => setShowGoalModal(true)}
+            onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.5)'
+                e.currentTarget.style.color = '#22d3ee'
+            }}
+            onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'
+                e.currentTarget.style.color = 'white'
+            }}
+          >
+            <SlidersHorizontal size={20} /> Adjust Goal Settings
+          </button>
+        </div>
+
+        <div>
+          <HistoryCalendar 
+            user={session.user} 
+            dailyGoal={dailyGoal} 
+            refreshTrigger={refreshTrigger} 
+          />
+        </div>
+      </div>
+
+      <div style={styles.aiBtnContainer}>
+        <button 
+            onClick={() => setShowAI(true)}
+            style={styles.aiBtn}
+            onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'scale(1.05)'
+                e.currentTarget.style.boxShadow = '0 0 25px rgba(6, 182, 212, 0.3)'
+                e.currentTarget.style.borderColor = '#22d3ee'
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(6, 182, 212, 0.05) 100%)'
+            }}
+            onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'scale(1)'
+                e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.2)'
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)'
+            }}
+        >
+            <Sparkles size={20} className="text-cyan-400" />
+            Get AI Bottle Recommendations
+        </button>
+      </div>
+
+      {showAI && <BottleRecommender onClose={() => setShowAI(false)} profile={userProfile} />}
+      
+      {showGoalModal && (
+        <div style={styles.overlay}>
+          <OnboardingForm 
+            user={session.user}
+            initialData={userProfile}
+            onClose={() => setShowGoalModal(false)}
+            onComplete={() => {
+                setShowGoalModal(false)
+                fetchProfile(session.user.id) 
+            }}
+          />
+        </div>
+      )}
+
+      <style jsx>{`
+        @media (max-width: 1024px) {
+            div[style*="display: grid"] {
+                grid-template-columns: 1fr !important;
+            }
+        }
+      `}</style>
+    </main>
   )
 }

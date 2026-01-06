@@ -2,97 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 15, 23, 42;
-}
-
+html,
 body {
-  /* THE NEW "MIDNIGHT TO TEAL" GRADIENT */
-  background: linear-gradient(to bottom, #0f172a 0%, #0e7490 100%); 
-  /* #0f172a = Slate 900 (Midnight)
-     #0e7490 = Cyan 700 (Teal/Deep Aqua) 
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  /* UPDATED GRADIENT: 
+     1. Starts at Deep Slate (#0f172a)
+     2. Stays Deep Slate until 40% (making it dominant)
+     3. Fades to Teal (#0e7490) only at the very end
   */
+  background: linear-gradient(135deg, #0f172a 0%, #0f172a 20%, #0e7490 100%);
   background-attachment: fixed;
-  min-height: 100vh;
-  color: white; /* Default text to white for readability on dark */
-  font-family: var(--font-poppins), sans-serif;
+  color: white;
+  font-family: sans-serif;
+  overflow-x: hidden;
 }
 
-/* --- GLASSMORPHISM --- */
-@layer components {
-  .glass-card {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    border-radius: 24px;
-  }
-  
-  .glass-button {
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
-    backdrop-filter: blur(4px);
-    transition: all 0.2s;
-    border-radius: 12px;
-    font-weight: 600;
-  }
-  .glass-button:hover {
-    background: rgba(255, 255, 255, 0.25);
-    transform: translateY(-1px);
-  }
-  .glass-button:active {
-    transform: scale(0.98);
-  }
-}
-
-/* CUSTOM SLIDER STYLING */
-input[type=range] {
-  -webkit-appearance: none; /* Hides default slider */
-  background: transparent;
-}
-
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  height: 20px;
-  width: 20px;
-  border-radius: 50%;
-  background: #ffffff;
-  cursor: pointer;
-  margin-top: -8px; /* You need to specify a margin in Chrome */
-  box-shadow: 0 0 10px rgba(0,0,0,0.2);
-}
-
-input[type=range]::-webkit-slider-runnable-track {
-  width: 100%;
-  height: 4px;
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 2px;
-}
-
-/* Firefox support */
-input[type=range]::-moz-range-thumb {
-  height: 20px;
-  width: 20px;
-  border-radius: 50%;
-  background: #ffffff;
-  cursor: pointer;
-  border: none;
-}
-input[type=range]::-moz-range-track {
-  width: 100%;
-  height: 4px;
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 2px;
-}
-
-/* ... keep your existing CSS ... */
-
-/* FIX FOR THE WAVE METER */
-.mask-circle {
-  mask-image: radial-gradient(circle, black 100%, transparent 100%);
-  -webkit-mask-image: radial-gradient(circle, black 100%, transparent 100%);
+* {
+  box-sizing: border-box;
 }
