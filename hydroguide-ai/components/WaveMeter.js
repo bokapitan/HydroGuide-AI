@@ -1,52 +1,78 @@
 'use client'
 
-export default function WaveMeter({ percentage, amount, dailyGoal }) {
-  const visualPercent = Math.min(Math.max(percentage, 0), 100)
-  
+export default function WaveMeter({ percentage, label }) {
+  // 1. Force a clean number between 0 and 100
+  const cleanPercent = typeof percentage === 'number' && !isNaN(percentage) 
+    ? Math.min(Math.max(percentage, 0), 100) 
+    : 0
+
+  // 2. DEFINE STYLES
+  const styles = {
+    container: {
+      width: '100%',
+      height: '100%',
+      backgroundColor: '#111827',     // Dark Gray
+      border: '4px solid rgba(255, 255, 255, 0.2)',
+      borderRadius: '50%',            // CIRCLE SHAPE
+      overflow: 'hidden',             // Clip everything to circle
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: '0 0 20px rgba(0,0,0,0.5)'
+    },
+    // The rising blue water block
+    waterContainer: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      width: '100%',
+      height: `${cleanPercent}%`,     // Dynamic Height
+      backgroundColor: '#06b6d4',     // Solid Cyan
+      transition: 'height 0.5s ease-out',
+      zIndex: 1
+    },
+    // The Animated Wave on top
+    wave: {
+      position: 'absolute',
+      top: '-28px',   // Overlap to hide seam
+      left: 0,
+      width: '200%',
+      height: '40px',
+      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 88.7'%3E%3Cpath d='M800 56.9c-155.5 0-204.9-50-405.5-49.9-200 0-250 49.9-394.5 49.9v31.8h800v-.2-31.6z' fill='%2306b6d4'/%3E%3C/svg%3E")`,
+      backgroundSize: '50% 100%',
+      backgroundRepeat: 'repeat-x',
+      animation: 'wave-move 2s linear infinite'
+    },
+    text: {
+      position: 'relative',
+      zIndex: 10,
+      color: 'white',
+      fontWeight: '900',
+      fontSize: '2.5rem', // Large readable text
+      textShadow: '0 2px 5px rgba(0,0,0,0.3)', 
+      pointerEvents: 'none'
+    }
+  }
+
   return (
-    <div className="relative w-56 h-56 mx-auto my-8 flex items-center justify-center">
-      
-      {/* 1. OUTER GLOW RING */}
-      <div className="absolute inset-0 rounded-full border-4 border-white/10 shadow-[0_0_50px_rgba(6,182,212,0.3)] pointer-events-none"></div>
-
-      {/* 2. THE WAVE MASK */}
-      <div className="relative w-48 h-48 rounded-full bg-slate-900/50 overflow-hidden border border-white/10 isolate mask-circle">
-        <div 
-           className="absolute bottom-0 left-0 w-[200%] h-[200%] bg-gradient-to-t from-cyan-500 to-blue-500 transition-all duration-1000 ease-out"
-           style={{ 
-             transform: `translateY(${100 - visualPercent}%) translateX(-25%) rotate(0deg)`,
-             borderRadius: '40%'
-           }}
-        >
-             <div className="animate-spin-slow w-full h-full rounded-[40%] bg-gradient-to-t from-cyan-400 to-blue-600 opacity-80 blur-sm"></div>
-        </div>
-      </div>
-
-      {/* 3. TEXT OVERLAY (Strictly Centered) */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center z-10 drop-shadow-lg pointer-events-none">
-        <div className="flex items-baseline">
-            <span className="text-5xl font-bold text-white tracking-tighter">
-            {amount}
-            </span>
-            <span className="text-lg font-medium text-cyan-200 ml-1">oz</span>
-        </div>
-        
-        <div className="h-px w-12 bg-white/20 my-1"></div>
-        
-        <span className="text-xs font-bold text-white/60 uppercase tracking-widest">
-          of {dailyGoal}
-        </span>
-      </div>
-
+    <div style={styles.container}>
       <style jsx>{`
-        .animate-spin-slow {
-          animation: spin 6s linear infinite;
-        }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+        @keyframes wave-move {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
         }
       `}</style>
+
+      {/* THE WATER */}
+      <div style={styles.waterContainer}>
+        <div style={styles.wave}></div>
+      </div>
+
+      {/* THE TEXT: Shows Label ("64 oz") if provided, otherwise Percentage */}
+      <div style={styles.text}>
+        {label ? label : `${cleanPercent.toFixed(0)}%`}
+      </div>
     </div>
   )
 }

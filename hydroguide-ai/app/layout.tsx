@@ -2,14 +2,12 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 
-// 1. Configure the Poppins font
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
-  weight: ["400", "600", "700", "900"], // We need these weights for the bold design
+  weight: ["400", "600", "700", "900"],
 });
 
-// 2. Update the Site Metadata
 export const metadata: Metadata = {
   title: "HydroGuide AI",
   description: "AI-Powered Hydration Tracking",
@@ -22,8 +20,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      {/* ADDED: suppressHydrationWarning to silence the extension error */}
       <body
-        // 3. Apply the font variable and default text color
+        suppressHydrationWarning
         className={`${poppins.variable} font-sans text-slate-800 antialiased`}
       >
         {children}

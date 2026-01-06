@@ -2,19 +2,20 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import WaveMeter from './WaveMeter'
-import { RotateCcw, Settings, Plus, Droplets } from 'lucide-react'
+import { RotateCcw, Settings, Zap, Plus, Droplets, GlassWater } from 'lucide-react'
 
 export default function HydrationTracker({ user, dailyGoal, onUpdate }) {
   const [todayTotal, setTodayTotal] = useState(0)
-  const [sliderValue, setSliderValue] = useState(8)
+  const [sliderValue, setSliderValue] = useState(0)
   const [bottleSize, setBottleSize] = useState(0) 
   const [isEditingBottle, setIsEditingBottle] = useState(false) 
+
+  const safeGoal = dailyGoal && dailyGoal > 0 ? dailyGoal : 100 
 
   useEffect(() => { fetchData() }, [])
 
   const fetchData = async () => {
     const today = new Date().toISOString().split('T')[0]
-    
     const { data: profileData } = await supabase.from('profiles').select('bottle_capacity').eq('id', user.id).single()
     if (profileData) setBottleSize(profileData.bottle_capacity || 24)
 
@@ -29,25 +30,16 @@ export default function HydrationTracker({ user, dailyGoal, onUpdate }) {
     if (!amount || amount <= 0) return
     const today = new Date().toISOString().split('T')[0]
     setTodayTotal(prev => prev + amount) 
-
-    const { error } = await supabase.from('water_logs').insert({
-        user_id: user.id, date: today, amount_oz: amount, daily_goal: dailyGoal
-    })
-
-    if (error) {
-      setTodayTotal(prev => prev - amount)
-    } else {
-      fetchData(); if (onUpdate) onUpdate()
-    }
+    const { error } = await supabase.from('water_logs').insert({ user_id: user.id, date: today, amount_oz: amount, daily_goal: safeGoal })
+    if (error) setTodayTotal(prev => prev - amount)
+    else { fetchData(); if (onUpdate) onUpdate() }
   }
 
   const undoLastLog = async () => {
     const today = new Date().toISOString().split('T')[0]
     const { data: lastLog } = await supabase.from('water_logs').select('id, amount_oz').eq('user_id', user.id).eq('date', today).order('created_at', { ascending: false }).limit(1).single()
-
     if (!lastLog) { alert("Nothing to undo for today!"); return }
     if (!window.confirm(`Undo ${lastLog.amount_oz} oz?`)) return
-
     setTodayTotal(prev => prev - lastLog.amount_oz)
     const { error } = await supabase.from('water_logs').delete().eq('id', lastLog.id)
     if (error) setTodayTotal(prev => prev + lastLog.amount_oz)
@@ -59,79 +51,253 @@ export default function HydrationTracker({ user, dailyGoal, onUpdate }) {
     setIsEditingBottle(false)
   }
 
-  const progressPercent = Math.min((todayTotal / dailyGoal) * 100, 100)
+  const progressPercent = Math.min((todayTotal / safeGoal) * 100, 100)
+  const presets = [8, 12, 16, 24]
+
+  // --- HARDCODED STYLES ---
+  const styles = {
+    card: {
+      display: 'flex',
+      flexDirection: 'row',
+      width: '100%',
+      minHeight: '450px',
+      background: 'rgba(255, 255, 255, 0.03)', 
+      backdropFilter: 'blur(20px)',
+      borderRadius: '24px',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      overflow: 'hidden',
+      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.2)',
+    },
+    leftCol: {
+      width: '40%',
+      // ONLY Right border. No bottom border artifact.
+      borderRight: '1px solid rgba(255, 255, 255, 0.08)', 
+      padding: '30px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'transparent', 
+    },
+    rightCol: {
+      width: '60%',
+      padding: '30px',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'space-between',
+      gap: '20px',
+    },
+    glassBtn: {
+      position: 'relative',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '12px',
+      borderRadius: '16px',
+      background: 'linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.01) 100%)',
+      border: '1px solid rgba(255, 255, 255, 0.08)',
+      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
+      cursor: 'pointer',
+      transition: 'transform 0.2s ease, border 0.2s ease',
+      color: 'white',
+      height: '90px',
+    },
+    undoBtn: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      padding: '8px 16px',
+      borderRadius: '20px',
+      background: 'rgba(239, 68, 68, 0.1)', 
+      border: '1px solid rgba(239, 68, 68, 0.2)',
+      color: 'rgba(252, 165, 165, 0.9)', 
+      fontSize: '10px',
+      fontWeight: '800',
+      textTransform: 'uppercase',
+      letterSpacing: '1px',
+      cursor: 'pointer',
+      transition: 'all 0.2s ease'
+    },
+    bottleBox: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '16px',
+      padding: '16px 20px',
+      borderRadius: '16px',
+      background: 'linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 100%)', 
+      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
+    },
+    drinkBtn: {
+      background: 'linear-gradient(135deg, #06b6d4 0%, #2563eb 100%)', 
+      color: 'white',
+      border: 'none',
+      padding: '10px 24px',
+      borderRadius: '12px',
+      fontWeight: '800',
+      fontSize: '12px',
+      textTransform: 'uppercase',
+      letterSpacing: '1px',
+      boxShadow: '0 4px 12px rgba(6, 182, 212, 0.3)',
+      cursor: 'pointer',
+      transition: 'transform 0.2s ease'
+    },
+    sliderBox: {
+        background: 'rgba(0, 0, 0, 0.2)',
+        borderRadius: '16px',
+        padding: '20px',
+        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)',
+    },
+    // NEW: Glass Style for the Add Button
+    glassAddBtn: {
+      padding: '0 24px',
+      height: '30px', 
+      borderRadius: '12px',
+      // Base state: Subtle Glass
+      background: 'linear-gradient(145deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      color: 'white',
+      fontSize: '12px',
+      fontWeight: '800',
+      textTransform: 'uppercase',
+      cursor: 'pointer',
+      transition: 'all 0.2s ease',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    // Active state: Vibrant Gradient
+    activeAddBtn: {
+      background: 'linear-gradient(135deg, #06b6d4 0%, #2563eb 100%)',
+      border: 'none',
+      boxShadow: '0 4px 12px rgba(6, 182, 212, 0.3)',
+    }
+  }
 
   return (
-    // Added 'flex flex-col' and specific padding/gap to prevent squashing
-    <div className="w-full glass-card p-6 flex flex-col gap-6">
+    <div style={styles.card}>
       
-      {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-cyan-100 font-bold uppercase text-xs tracking-widest flex items-center gap-2">
-           <Droplets size={14} className="text-cyan-400" /> Today's Hydration
-        </h2>
-        <button onClick={undoLastLog} className="text-white/50 hover:text-white transition p-1 rounded-full hover:bg-white/10" title="Undo">
-            <RotateCcw size={16} />
-        </button>
+      {/* --- LEFT VISUALS --- */}
+      {/* REMOVED ALL TAILWIND BORDER CLASSES to kill the white line */}
+      <div style={styles.leftCol}>
+         <div className="mb-6 text-center">
+            <h2 className="text-xl font-bold text-white tracking-tight flex items-center justify-center gap-2">
+                <Droplets size={20} className="text-cyan-400"/>
+                Status
+            </h2>
+            <p className="text-cyan-200/50 text-[10px] font-bold uppercase tracking-widest mt-1">
+                Goal: {safeGoal} oz
+            </p>
+         </div>
+
+         <div className="w-full max-w-[200px] aspect-square relative">
+             <WaveMeter percentage={progressPercent} label={`${todayTotal} oz`} />
+         </div>
       </div>
 
-      {/* METER - Added margins to separate it from header/footer */}
-      <div className="my-2 scale-90 sm:scale-100"> 
-          <WaveMeter percentage={progressPercent} amount={todayTotal} dailyGoal={dailyGoal} />
-      </div>
-
-      {/* CONTROLS */}
-      <div className="flex flex-col gap-4">
+      {/* --- RIGHT CONTROLS --- */}
+      <div style={styles.rightCol}>
         
-        {/* SLIDER CARD */}
-        <div className="bg-slate-900/40 p-4 rounded-2xl border border-white/5">
-          <div className="flex justify-between text-white text-sm font-semibold mb-3">
-            <span>Quick Add</span>
-            <span className="text-cyan-300">{sliderValue} oz</span>
-          </div>
-          
-          <input 
-            type="range" min="1" max={dailyGoal} 
-            value={sliderValue} 
-            onChange={(e) => setSliderValue(parseInt(e.target.value))}
-            className="w-full mb-4 accent-cyan-400"
-          />
-          
-          <button 
-            onClick={() => logWater(sliderValue)}
-            className="w-full glass-button py-3 flex items-center justify-center gap-2 text-white hover:bg-white/10"
-          >
-            <Plus size={18} /> Add {sliderValue} oz
-          </button>
+        {/* HEADER */}
+        <div className="flex justify-between items-center pb-2 border-b border-white/10">
+            <div className="flex items-center gap-2 text-white/90 font-bold text-sm">
+                <Zap size={16} className="text-yellow-400 fill-yellow-400"/>
+                <span>Quick Add</span>
+            </div>
+            <button 
+                onClick={undoLastLog} 
+                style={styles.undoBtn}
+                className="hover:bg-red-500/20 hover:text-red-200 active:scale-95"
+            >
+                <RotateCcw size={12} /> Undo
+            </button>
         </div>
 
-        {/* BOTTLE BUTTON */}
-        {!isEditingBottle ? (
-            <div className="flex gap-2">
-            <button 
-                onClick={() => logWater(bottleSize)}
-                className="flex-grow h-12 bg-gradient-to-r from-emerald-500/80 to-emerald-600/80 hover:from-emerald-500 hover:to-emerald-600 text-white font-bold rounded-xl shadow-lg border border-white/10 flex items-center justify-center gap-2 transition-transform active:scale-95"
-            >
-                <span className="text-lg">🥤</span> Drink Bottle ({bottleSize}oz)
-            </button>
-            <button 
-                onClick={() => setIsEditingBottle(true)}
-                className="w-12 h-12 glass-button flex items-center justify-center text-white/60 hover:text-white"
-            >
-                <Settings size={20} />
-            </button>
-            </div>
-        ) : (
-            <div className="flex gap-2 items-center justify-between bg-slate-900/40 p-2 rounded-xl border border-white/5 h-12">
-                <span className="text-sm font-bold text-white ml-2">Size:</span>
-                <input 
-                    type="number" value={bottleSize}
-                    onChange={(e) => setBottleSize(parseInt(e.target.value))}
-                    className="glass-input w-20 text-center py-1 h-8"
+        {/* PRESETS */}
+        <div className="grid grid-cols-4 gap-3">
+            {presets.map(amount => (
+                <button 
+                    key={amount}
+                    onClick={() => logWater(amount)}
+                    style={styles.glassBtn}
+                    className="hover:scale-[0.98] hover:border-cyan-400/30 group"
+                >
+                    <span className="text-3xl font-black text-white group-hover:text-cyan-200">{amount}</span>
+                    <span className="text-[10px] uppercase text-white/30 font-bold tracking-wider group-hover:text-cyan-200/50">oz</span>
+                </button>
+            ))}
+        </div>
+
+        {/* SLIDER with Glass ADD Button */}
+        <div style={styles.sliderBox}>
+             <div className="flex justify-between text-[10px] font-bold text-white/40 uppercase mb-2">
+                <span>Precision Amount</span>
+                <span className="text-cyan-400">{sliderValue} oz</span>
+             </div>
+             
+             <div className="flex gap-4 items-center">
+                 <input 
+                    type="range" min="0" max={50} 
+                    value={sliderValue} 
+                    onChange={(e) => setSliderValue(parseInt(e.target.value))}
+                    className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-cyan-400"
                 />
-                <button onClick={saveBottleSize} className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold">Save</button>
-            </div>
-        )}
+                <button 
+                    disabled={sliderValue === 0}
+                    onClick={() => { logWater(sliderValue); setSliderValue(0); }}
+                    style={{
+                        ...styles.glassAddBtn,
+                        ...(sliderValue > 0 ? styles.activeAddBtn : {})
+                    }}
+                    className={sliderValue > 0 ? "hover:scale-105 active:scale-95" : "opacity-50 cursor-not-allowed"}
+                >
+                    Add
+                </button>
+             </div>
+        </div>
+
+        {/* BOTTLE */}
+        <div className="mt-auto">
+             {!isEditingBottle ? (
+                <div style={styles.bottleBox} className="group hover:bg-white/10 transition cursor-pointer">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+                        <GlassWater size={20} strokeWidth={2.5} />
+                    </div>
+                    <div className="flex-grow">
+                        <div className="text-[10px] text-emerald-200/60 font-bold uppercase tracking-wider mb-0.5">My Bottle</div>
+                        <div className="text-white font-black text-2xl leading-none">{bottleSize} <span className="text-sm text-white/30 font-medium">oz</span></div>
+                    </div>
+                    <button 
+                        onClick={() => logWater(bottleSize)} 
+                        style={styles.drinkBtn}
+                        className="hover:scale-105 active:scale-95"
+                    >
+                        Drink
+                    </button>
+                    <button 
+                        onClick={() => setIsEditingBottle(true)} 
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/30 hover:text-white transition"
+                    >
+                        <Settings size={16} />
+                    </button>
+                </div>
+             ) : (
+                <div className="flex gap-3 items-center justify-between bg-black/30 p-4 rounded-xl border border-white/10">
+                    <span className="text-xs font-bold text-white ml-2 uppercase tracking-wide">Bottle Size:</span>
+                    <input 
+                        type="number" value={bottleSize}
+                        onChange={(e) => setBottleSize(parseInt(e.target.value))}
+                        className="glass-input w-24 text-center py-2 font-bold text-xl bg-white/5 border border-white/10 rounded-lg focus:border-emerald-500 focus:outline-none text-emerald-400"
+                    />
+                    <button 
+                        onClick={saveBottleSize} 
+                        className="text-xs bg-emerald-500 text-emerald-950 px-6 py-2.5 rounded-lg font-bold hover:bg-emerald-400 transition uppercase tracking-wide"
+                    >
+                        Save
+                    </button>
+                </div>
+             )}
+        </div>
       </div>
     </div>
   )

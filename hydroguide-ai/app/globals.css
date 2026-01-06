@@ -88,3 +88,11 @@ input[type=range]::-moz-range-track {
   background: rgba(255, 255, 255, 0.3);
   border-radius: 2px;
 }
+
+/* ... keep your existing CSS ... */
+
+/* FIX FOR THE WAVE METER */
+.mask-circle {
+  mask-image: radial-gradient(circle, black 100%, transparent 100%);
+  -webkit-mask-image: radial-gradient(circle, black 100%, transparent 100%);
+}
