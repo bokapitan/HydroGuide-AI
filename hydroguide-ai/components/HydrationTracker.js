@@ -4,10 +4,8 @@ import { supabase } from '../lib/supabaseClient'
 import WaveMeter from './WaveMeter'
 import { RotateCcw, Settings, Zap, Droplets, GlassWater } from 'lucide-react'
 
-// Add themeColor to props
+// UPDATED: Added themeColor to props
 export default function HydrationTracker({ user, dailyGoal, onUpdate, themeColor = 'cyan' }) {
-
-export default function HydrationTracker({ user, dailyGoal, onUpdate }) {
   const [todayTotal, setTodayTotal] = useState(0)
   const [sliderValue, setSliderValue] = useState(0)
   const [bottleSize, setBottleSize] = useState(0) 
@@ -229,8 +227,8 @@ export default function HydrationTracker({ user, dailyGoal, onUpdate }) {
          </div>
 
          <div className="w-full max-w-[200px] aspect-square relative">
-             <WaveMeter percentage={progressPercent} label={`${todayTotal} oz`} color={themeColor} // <--- PASS IT HERE
-             />
+             {/* UPDATED: Passing themeColor prop to WaveMeter */}
+             <WaveMeter percentage={progressPercent} label={`${todayTotal} oz`} color={themeColor} />
          </div>
       </div>
 
@@ -275,7 +273,6 @@ export default function HydrationTracker({ user, dailyGoal, onUpdate }) {
              </div>
              
              <div className="flex gap-4 items-center">
-                 {/* UPDATED: MAX IS NOW SAFEGOAL */}
                  <input 
                     type="range" min="0" max={safeGoal} 
                     value={sliderValue} 
