@@ -6,13 +6,15 @@ import HydrationTracker from '../components/HydrationTracker'
 import HistoryCalendar from '../components/HistoryCalendar'
 import BottleRecommender from '../components/BottleRecommender' 
 import OnboardingForm from '../components/OnboardingForm'
-import { SlidersHorizontal, LogOut, Sparkles } from 'lucide-react'
+import ProfileMenu from '../components/ProfileMenu' // <--- NEW IMPORT
+import { SlidersHorizontal, Sparkles } from 'lucide-react'
 
 export default function Home() {
   const [session, setSession] = useState(null)
   
   const [dailyGoal, setDailyGoal] = useState(100)
   const [userProfile, setUserProfile] = useState(null) 
+  const [themeColor, setThemeColor] = useState('cyan') // <--- NEW STATE
 
   const [showGoalModal, setShowGoalModal] = useState(false)
   const [showAI, setShowAI] = useState(false)
@@ -33,10 +35,10 @@ export default function Home() {
   }, [])
 
   const fetchProfile = async (userId) => {
-    // UPDATED: Use maybeSingle() to avoid 406 errors if row is missing
+    // UPDATED: Select theme_color and is_pro
     const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('*') 
         .eq('id', userId)
         .maybeSingle()
 
@@ -44,11 +46,11 @@ export default function Home() {
         // User exists: Load their data
         setDailyGoal(data.daily_goal_oz || 100) 
         setUserProfile(data)
+        // Set the app theme if it exists, otherwise default to cyan
+        if (data.theme_color) setThemeColor(data.theme_color)
     } else {
         // User does NOT exist (New User):
-        // 1. Set default profile state to null
         setUserProfile(null)
-        // 2. Automatically open the onboarding modal
         setShowGoalModal(true)
     }
   }
@@ -83,20 +85,7 @@ export default function Home() {
       WebkitTextFillColor: 'transparent',
       letterSpacing: '-1px',
     },
-    signOutBtn: {
-      padding: '8px 16px',
-      borderRadius: '20px',
-      background: 'rgba(255,255,255,0.05)',
-      border: '1px solid rgba(255,255,255,0.1)',
-      color: 'rgba(255,255,255,0.6)',
-      fontSize: '12px',
-      fontWeight: 'bold',
-      cursor: 'pointer',
-      transition: 'all 0.2s',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '6px',
-    },
+    // signOutBtn style REMOVED (Replaced by ProfileMenu component styles)
     grid: {
       display: 'grid',
       gridTemplateColumns: '1.4fr 1fr', 
@@ -172,22 +161,24 @@ export default function Home() {
       
       <div style={styles.header}>
         <div style={styles.logo}>💧 HydroGuide</div>
-        <button 
-          onClick={() => supabase.auth.signOut()} 
-          style={styles.signOutBtn}
-          onMouseOver={(e) => e.target.style.background = 'rgba(255,255,255,0.1)'}
-          onMouseOut={(e) => e.target.style.background = 'rgba(255,255,255,0.05)'}
-        >
-          <LogOut size={14} /> Sign Out
-        </button>
+        
+        {/* NEW PROFILE MENU (Replaces simple Sign Out) */}
+        <ProfileMenu 
+            user={session.user} 
+            profile={userProfile} 
+            onThemeChange={setThemeColor}
+            onLogout={() => supabase.auth.signOut()}
+        />
       </div>
 
       <div style={styles.grid}>
         <div style={styles.leftColumn}>
+          {/* PASSED themeColor PROP */}
           <HydrationTracker 
             user={session.user} 
             dailyGoal={dailyGoal} 
             onUpdate={() => setRefreshTrigger(prev => prev + 1)} 
+            themeColor={themeColor}
           />
 
           <button 
