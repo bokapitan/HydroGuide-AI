@@ -10,6 +10,7 @@ export default function HydrationTracker({ user, dailyGoal, onUpdate }) {
   const [bottleSize, setBottleSize] = useState(0) 
   const [isEditingBottle, setIsEditingBottle] = useState(false) 
 
+  // Use the passed dailyGoal, or default to 100 if missing
   const safeGoal = dailyGoal && dailyGoal > 0 ? dailyGoal : 100 
 
   useEffect(() => { fetchData() }, [])
@@ -270,8 +271,9 @@ export default function HydrationTracker({ user, dailyGoal, onUpdate }) {
              </div>
              
              <div className="flex gap-4 items-center">
+                 {/* UPDATED: MAX IS NOW SAFEGOAL */}
                  <input 
-                    type="range" min="0" max={50} 
+                    type="range" min="0" max={safeGoal} 
                     value={sliderValue} 
                     onChange={(e) => setSliderValue(parseInt(e.target.value))}
                 />
@@ -307,7 +309,6 @@ export default function HydrationTracker({ user, dailyGoal, onUpdate }) {
                     >
                         Drink
                     </button>
-                    {/* UPDATED: Hardcoded color white on the icon */}
                     <button 
                         onClick={() => setIsEditingBottle(true)} 
                         style={{ background: 'transparent', border: 'none', padding: 0 }}
