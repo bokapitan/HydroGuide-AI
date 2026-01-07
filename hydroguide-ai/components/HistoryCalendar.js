@@ -76,14 +76,11 @@ export default function HistoryCalendar({ user, dailyGoal, refreshTrigger }) {
     
     // TILE STYLE
     dayTile: (percent, isLocked) => {
-        // Default (Empty)
         let bg = 'rgba(255, 255, 255, 0.02)' 
         let border = 'rgba(255, 255, 255, 0.05)'
         let shadow = 'none'
         
-        // If locked, it just stays "Empty" style regardless of data
         if (isLocked) {
-             // Optional: Make it slightly dimmer to hint it's inactive
              bg = 'rgba(0, 0, 0, 0.1)' 
              border = 'rgba(255, 255, 255, 0.02)'
         } 
@@ -100,6 +97,22 @@ export default function HistoryCalendar({ user, dailyGoal, refreshTrigger }) {
             width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center', color: 'white',
             position: 'relative', boxShadow: shadow, transition: 'all 0.3s ease',
+        }
+    },
+    footer: {
+      display: 'flex', justifyContent: 'center', gap: '20px', 
+      marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+    },
+    legendItem: { display: 'flex', alignItems: 'center', gap: '8px' },
+    legendBox: (type) => {
+        let bg, border;
+        if (type === 'empty') { bg = 'rgba(255, 255, 255, 0.05)'; border = 'rgba(255, 255, 255, 0.1)'; } 
+        else if (type === 'track') { bg = 'rgba(6, 182, 212, 0.25)'; border = 'rgba(6, 182, 212, 0.5)'; } 
+        else if (type === 'locked') { bg = 'rgba(0, 0, 0, 0.2)'; border = 'rgba(255, 255, 255, 0.05)'; }
+        
+        return {
+            width: '12px', height: '12px', borderRadius: '3px',
+            background: bg, border: `1px solid ${border}`
         }
     }
   }
@@ -134,8 +147,6 @@ export default function HistoryCalendar({ user, dailyGoal, refreshTrigger }) {
             const amount = history[dateKey] || 0
             const percent = Math.min((amount / safeGoal) * 100, 100)
             const isToday = new Date().toISOString().split('T')[0] === dateKey
-            
-            // LOGIC: If not pro, and older than 7 days -> Treat as LOCKED
             const isLocked = !isPro && date < sevenDaysAgo
 
             return (
@@ -146,15 +157,12 @@ export default function HistoryCalendar({ user, dailyGoal, refreshTrigger }) {
                         ...(isToday ? { border: '1px solid white', boxShadow: '0 0 10px rgba(255,255,255,0.2)' } : {})
                     }}
                     className="group"
-                    // Tooltip hints at data existence if locked
                     title={isLocked ? "Subscribe to view history" : `${amount} oz`}
                 >
-                    {/* Always show Date Number */}
                     <span className={`text-[10px] font-bold ${isLocked ? 'opacity-30' : 'opacity-80'}`}>
                         {date.getDate()}
                     </span>
 
-                    {/* Only show dots if NOT locked */}
                     {!isLocked && amount > 0 && (
                         <div className="mt-0.5">
                             {percent >= 100 ? (
@@ -171,17 +179,17 @@ export default function HistoryCalendar({ user, dailyGoal, refreshTrigger }) {
 
       {/* FOOTER */}
       <div style={styles.footer}>
-        <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-white/5 border border-white/10"></div>
+        <div style={styles.legendItem}>
+            <div style={styles.legendBox('empty')}></div>
             <span className="text-[9px] uppercase text-white/40 font-bold">Empty</span>
         </div>
-        <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-cyan-500/25 border border-cyan-500/50"></div>
+        <div style={styles.legendItem}>
+            <div style={styles.legendBox('track')}></div>
             <span className="text-[9px] uppercase text-white/60 font-bold">Tracked</span>
         </div>
         {!isPro && (
-            <div className="flex items-center gap-2 opacity-50">
-                <div className="w-3 h-3 rounded bg-black/20 border border-white/5"></div>
+            <div style={styles.legendItem}>
+                <div style={styles.legendBox('locked')}></div>
                 <span className="text-[9px] uppercase text-white/40 font-bold">History Locked</span>
             </div>
         )}
