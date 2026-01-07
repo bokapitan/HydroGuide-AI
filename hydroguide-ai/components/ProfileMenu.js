@@ -1,7 +1,7 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import { LogOut, User, Crown, Palette, ChevronDown, Sparkles, History } from 'lucide-react'
+import { LogOut, User, Crown, Palette, ChevronDown, Sparkles, History, CreditCard } from 'lucide-react'
 
 export default function ProfileMenu({ user, profile, onThemeChange, onLogout }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -20,6 +20,16 @@ export default function ProfileMenu({ user, profile, onThemeChange, onLogout }) 
   const isPro = profile?.is_pro || false
   const currentTheme = profile?.theme_color || 'cyan'
 
+  // --- CONFIG ---
+  // 1. REPLACE WITH YOUR NEW STRIPE PAYMENT LINK (For New Users)
+
+  // NEW: Append the user ID dynamically
+  const BASE_STRIPE_LINK = "https://buy.stripe.com/test_cNi28kf61a3GgBjgJmew801" 
+  const SUBSCRIBE_LINK = `${BASE_STRIPE_LINK}?client_reference_id=${user.id}`
+  
+  // 2. REPLACE WITH YOUR STRIPE CUSTOMER PORTAL LINK (For Existing Pros)
+  const MANAGE_SUB_LINK = "https://billing.stripe.com/p/login/test_bJecMY2jf0t62Kt2Swew800"
+
   const handleThemeClick = async (color) => {
     if (!isPro && color !== 'cyan') {
       alert("🔒 Subscribe to unlock Premium Themes & Full History!")
@@ -36,7 +46,6 @@ export default function ProfileMenu({ user, profile, onThemeChange, onLogout }) 
     { id: 'red', color: '#f87171', label: 'Mars' },
   ]
 
-  // STYLES (Kept concise for readability)
   const styles = {
     menuBtn: {
       display: 'flex', alignItems: 'center', gap: '10px',
@@ -45,7 +54,7 @@ export default function ProfileMenu({ user, profile, onThemeChange, onLogout }) 
       fontWeight: '600', fontSize: '14px'
     },
     dropdown: {
-      position: 'absolute', top: 'calc(100% + 10px)', right: 0, width: '280px', // Slightly wider for text
+      position: 'absolute', top: 'calc(100% + 10px)', right: 0, width: '280px',
       background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)',
       borderRadius: '16px', padding: '8px', boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
       zIndex: 100, overflow: 'hidden'
@@ -60,6 +69,12 @@ export default function ProfileMenu({ user, profile, onThemeChange, onLogout }) 
         background: 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)',
         color: '#451a03', fontWeight: 'bold', fontSize: '13px', border: 'none',
         cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px'
+    },
+    manageBtn: {
+        width: '100%', padding: '12px', borderRadius: '10px',
+        background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+        color: 'white', fontWeight: 'bold', fontSize: '13px',
+        cursor: 'pointer', display: 'flex', alignItems: 'center', justify: 'center', gap: '8px'
     },
     colorGrid: { display: 'flex', gap: '8px', marginTop: '8px' },
     colorCircle: (c, locked) => ({
@@ -85,16 +100,18 @@ export default function ProfileMenu({ user, profile, onThemeChange, onLogout }) 
             {/* PRO STATUS / UPSELL */}
             <div style={styles.section}>
                 {isPro ? (
-                    <div className="flex items-center gap-2 text-yellow-400 font-bold text-sm bg-yellow-400/10 p-3 rounded-lg justify-center">
-                        <Crown size={16} fill="currentColor" /> PRO ACTIVE
-                    </div>
+                    <>
+                        <div className="flex items-center gap-2 text-yellow-400 font-bold text-sm bg-yellow-400/10 p-3 rounded-lg justify-center mb-2">
+                            <Crown size={16} fill="currentColor" /> PRO ACTIVE
+                        </div>
+                        <a href={MANAGE_SUB_LINK} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+                            <button style={styles.manageBtn} className="hover:bg-white/10">
+                                <CreditCard size={14} /> Manage Subscription
+                            </button>
+                        </a>
+                    </>
                 ) : (
-                    <a 
-                        href="https://buy.stripe.com/test_cNi28kf61a3GgBjgJmew801" // <--- PASTE NEW STRIPE LINK HERE
-                        target="_blank" 
-                        rel="noreferrer"
-                        style={{ textDecoration: 'none' }}
-                    >
+                    <a href={SUBSCRIBE_LINK} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
                         <button style={styles.upgradeBtn} className="hover:scale-[1.02] transition-transform">
                             <div className="flex items-center gap-2">
                                 <Sparkles size={14} /> UNLOCK PRO
