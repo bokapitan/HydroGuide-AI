@@ -90,7 +90,7 @@ export default function ProfileMenu({ user, profile, onThemeChange, onLogout }) 
                     </div>
                 ) : (
                     <a 
-                        href="YOUR_NEW_SUBSCRIPTION_LINK_HERE" // <--- PASTE NEW STRIPE LINK HERE
+                        href="https://buy.stripe.com/test_cNi28kf61a3GgBjgJmew801" // <--- PASTE NEW STRIPE LINK HERE
                         target="_blank" 
                         rel="noreferrer"
                         style={{ textDecoration: 'none' }}
