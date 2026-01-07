@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import { X, Save, Activity, Thermometer, User, Calendar, Droplets } from 'lucide-react'
+import { X, Save, Activity, Thermometer, User, Calendar, Droplets, ChevronDown } from 'lucide-react'
 
 export default function OnboardingForm({ user, initialData, onClose, onComplete }) {
   // --- SAFETY CHECK: Handle null data for new users ---
@@ -22,18 +22,18 @@ export default function OnboardingForm({ user, initialData, onClose, onComplete 
     let goal = w * 0.5 
 
     // Activity Adjustments
-    if (activityLevel === 'high') goal += 20 // Heavy exercise
-    if (activityLevel === 'moderate') goal += 10 // Light exercise
+    if (activityLevel === 'high') goal += 20 
+    if (activityLevel === 'moderate') goal += 10 
     
     // Climate Adjustments
-    if (climate === 'hot') goal += 15 // Sweating more
-    if (climate === 'cold') goal -= 5 // Less evaporation, though still need hydration
+    if (climate === 'hot') goal += 15 
+    if (climate === 'cold') goal -= 5 
     
-    // Age Adjustments (Metabolism slows slightly with age)
+    // Age Adjustments 
     const a = parseInt(age) || 30
     if (a > 55) goal *= 0.95 
 
-    // Gender Adjustments (Men typically have higher muscle mass = more water)
+    // Gender Adjustments 
     if (gender === 'Male') goal += 5
     if (gender === 'Female') goal -= 5
 
@@ -58,14 +58,13 @@ export default function OnboardingForm({ user, initialData, onClose, onComplete 
       updated_at: new Date()
     }
 
-    // .upsert() creates the row if it doesn't exist, or updates it if it does
     const { error } = await supabase
       .from('profiles')
       .upsert(updates) 
 
     setLoading(false)
     if (!error) {
-      if (onComplete) onComplete() // Refresh parent data
+      if (onComplete) onComplete() 
       else onClose()
     } else {
       alert('Error saving profile! Check if "age" and "gender" columns exist in Supabase.')
@@ -86,7 +85,7 @@ export default function OnboardingForm({ user, initialData, onClose, onComplete 
         boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
         position: 'relative',
         maxHeight: '90vh',
-        overflowY: 'auto' // Scroll if screen is short
+        overflowY: 'auto'
     },
     label: {
         display: 'flex',
@@ -111,17 +110,35 @@ export default function OnboardingForm({ user, initialData, onClose, onComplete 
         outline: 'none',
         transition: 'border-color 0.2s',
     },
+    // WRAPPER for custom Selects
+    selectWrapper: {
+        position: 'relative',
+        width: '100%',
+    },
     select: {
         width: '100%',
         background: 'rgba(0,0,0,0.3)',
         border: '1px solid rgba(255,255,255,0.1)',
         padding: '14px',
+        paddingRight: '40px', // Space for the arrow
         borderRadius: '12px',
         color: 'white',
         fontSize: '16px',
         outline: 'none',
-        appearance: 'none', 
-        cursor: 'pointer'
+        cursor: 'pointer',
+        // THE FIREFOX & BROWSER FIXES:
+        appearance: 'none',
+        MozAppearance: 'none',
+        WebkitAppearance: 'none',
+    },
+    // Custom Arrow Icon positioned absolutely
+    selectIcon: {
+        position: 'absolute',
+        right: '14px',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        pointerEvents: 'none', // Clicks pass through to the select
+        color: 'rgba(255,255,255,0.4)'
     },
     saveBtn: {
         width: '100%',
@@ -188,15 +205,18 @@ export default function OnboardingForm({ user, initialData, onClose, onComplete 
                 <label style={styles.label}>
                     <Droplets size={14} className="text-cyan-400" /> Gender
                 </label>
-                <select 
-                    value={gender}
-                    onChange={(e) => setGender(e.target.value)}
-                    style={styles.select}
-                >
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                </select>
+                <div style={styles.selectWrapper}>
+                    <select 
+                        value={gender}
+                        onChange={(e) => setGender(e.target.value)}
+                        style={styles.select}
+                    >
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <ChevronDown size={16} style={styles.selectIcon} />
+                </div>
             </div>
         </div>
 
@@ -217,29 +237,35 @@ export default function OnboardingForm({ user, initialData, onClose, onComplete 
         <label style={styles.label}>
             <Activity size={14} className="text-cyan-400" /> Activity Level
         </label>
-        <select 
-            value={activityLevel}
-            onChange={(e) => setActivityLevel(e.target.value)}
-            style={styles.select}
-        >
-            <option value="low">Low (Sedentary)</option>
-            <option value="moderate">Moderate (Light Exercise)</option>
-            <option value="high">High (Athlete/Active Job)</option>
-        </select>
+        <div style={styles.selectWrapper}>
+            <select 
+                value={activityLevel}
+                onChange={(e) => setActivityLevel(e.target.value)}
+                style={styles.select}
+            >
+                <option value="low">Low (Sedentary)</option>
+                <option value="moderate">Moderate (Light Exercise)</option>
+                <option value="high">High (Athlete/Active Job)</option>
+            </select>
+            <ChevronDown size={16} style={styles.selectIcon} />
+        </div>
 
         {/* ROW 4: Climate */}
         <label style={styles.label}>
             <Thermometer size={14} className="text-cyan-400" /> Environment
         </label>
-        <select 
-            value={climate}
-            onChange={(e) => setClimate(e.target.value)}
-            style={styles.select}
-        >
-            <option value="temperate">Temperate (Average)</option>
-            <option value="hot">Hot / Humid</option>
-            <option value="cold">Cold / Dry</option>
-        </select>
+        <div style={styles.selectWrapper}>
+            <select 
+                value={climate}
+                onChange={(e) => setClimate(e.target.value)}
+                style={styles.select}
+            >
+                <option value="temperate">Temperate (Average)</option>
+                <option value="hot">Hot / Humid</option>
+                <option value="cold">Cold / Dry</option>
+            </select>
+            <ChevronDown size={16} style={styles.selectIcon} />
+        </div>
 
         <button type="submit" style={styles.saveBtn} disabled={loading}>
             {loading ? 'Saving...' : <><Save size={20} /> Save & Calculate</>}
