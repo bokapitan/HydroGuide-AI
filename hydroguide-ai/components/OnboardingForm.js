@@ -1,298 +1,307 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import { X, Save, Activity, Thermometer, User, Calendar, Droplets, ChevronDown } from 'lucide-react'
+import { X, Activity, Thermometer, Weight, User, Calendar, ChevronDown, ChevronUp, Check } from 'lucide-react'
 
-export default function OnboardingForm({ user, initialData, onClose, onComplete }) {
-  // --- SAFETY: Ensure we never read properties of null ---
-  const safeData = initialData || {}
+// --- HELPER COMPONENT: CUSTOM GLASS DROPDOWN ---
+function GlassDropdown({ label, icon: Icon, value, options, onChange }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef(null)
 
-  // --- STATE ---
-  const [age, setAge] = useState(safeData.age || '')
-  const [gender, setGender] = useState(safeData.gender || 'Male')
-  const [weight, setWeight] = useState(safeData.weight || '')
-  // Default to 'sedentary' (0 extra) if nothing saved
-  const [activityLevel, setActivityLevel] = useState(safeData.activity_level || 'sedentary')
-  const [climate, setClimate] = useState(safeData.climate || 'temperate')
-  const [loading, setLoading] = useState(false)
-
-  // --- CALCULATE GOAL (Based on Flowchart) ---
-  const calculateGoal = () => {
-    const ageVal = parseInt(age) || 0
-    const weightVal = parseFloat(weight) || 0
-    let goal = 0
-
-    // --- STEP 1: CHILD LOGIC (< 14 Years) ---
-    // [cite: 29, 37, 41, 43]
-    if (ageVal > 0 && ageVal < 14) {
-        if (ageVal < 1) return 32       // [cite: 50]
-        if (ageVal < 4) return 40       // [cite: 48]
-        if (ageVal < 9) return 56       // [cite: 47]
-        return 64                       // Standard for 9-13
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false)
+      }
     }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
-    // --- STEP 2: ADULT BASE LOGIC (>= 14 Years) ---
-    // 
-    if (gender === 'Male') {
-        goal = weightVal * 0.67 // Male Multiplier [cite: 36]
-    } else {
-        goal = weightVal * 0.50 // Female/Other Multiplier [cite: 51]
+  const selectedLabel = options.find(opt => opt.value === value)?.label || "Select..."
+
+  const styles = {
+    label: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        color: 'rgba(255,255,255,0.7)',
+        fontSize: '12px',
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
+        letterSpacing: '1px',
+        marginBottom: '8px',
+        marginTop: '20px'
+    },
+    trigger: {
+        width: '100%',
+        padding: '14px',
+        borderRadius: '12px',
+        background: 'rgba(0, 0, 0, 0.3)',
+        border: isOpen ? '1px solid rgba(6, 182, 212, 0.5)' : '1px solid rgba(255, 255, 255, 0.1)',
+        color: value ? 'white' : 'rgba(255,255,255,0.5)',
+        fontSize: '16px',
+        cursor: 'pointer',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        transition: 'all 0.2s'
+    },
+    menu: {
+        position: 'absolute',
+        top: 'calc(100% + 8px)',
+        left: 0,
+        width: '100%',
+        background: '#1e293b', 
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '12px',
+        overflow: 'hidden',
+        zIndex: 50,
+        boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+        animation: 'fadeIn 0.2s ease-out'
+    },
+    item: {
+        padding: '12px 14px',
+        color: 'white',
+        fontSize: '15px',
+        cursor: 'pointer',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
     }
-
-    // --- STEP 3: ACTIVITY ADD-ONS ---
-    // [cite: 57, 60, 64, 68, 70, 71]
-    switch (activityLevel) {
-        case 'light':      goal += 6;  break; // [cite: 60]
-        case 'moderate':   goal += 12; break; // [cite: 68] assuming diagram flow
-        case 'high':       goal += 24; break; // [cite: 70]
-        case 'extreme':    goal += 32; break; // [cite: 71]
-        case 'sedentary':  goal += 0;  break; // Base
-    }
-
-    // --- STEP 4: CLIMATE ADD-ONS ---
-    // [cite: 61, 74]
-    if (climate === 'hot') {
-        goal += 12 // "Tropical" adds 12 oz [cite: 74]
-    }
-
-    return Math.round(goal)
   }
 
-  // --- SAVE TO DB ---
-  const handleSave = async (e) => {
+  return (
+    <div style={{ position: 'relative' }} ref={dropdownRef}>
+        <label style={styles.label}><Icon size={14} className="text-cyan-400"/> {label}</label>
+        
+        <div style={styles.trigger} onClick={() => setIsOpen(!isOpen)}>
+            <span>{selectedLabel}</span>
+            <ChevronDown size={16} className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-cyan-400' : 'text-white/50'}`} />
+        </div>
+
+        {isOpen && (
+            <div style={styles.menu}>
+                {options.map((opt) => (
+                    <div 
+                        key={opt.value} 
+                        style={styles.item}
+                        className="hover:bg-white/10 transition-colors"
+                        onClick={() => {
+                            onChange(opt.value)
+                            setIsOpen(false)
+                        }}
+                    >
+                        {opt.label}
+                        {value === opt.value && <Check size={14} className="text-cyan-400" />}
+                    </div>
+                ))}
+            </div>
+        )}
+    </div>
+  )
+}
+
+// --- MAIN COMPONENT ---
+export default function OnboardingForm({ user, onComplete, onClose, initialData }) {
+  const [loading, setLoading] = useState(false)
+  
+  // --- FIX: Handle null initialData safely for new users ---
+  const safeData = initialData || {}
+
+  const [formData, setFormData] = useState({
+    weight: safeData.weight || '',
+    age: safeData.age || '',
+    gender: safeData.gender || '',
+    climate: safeData.climate || '',
+    activity: safeData.activity_level || '' 
+  })
+
+  const handleChange = (field, value) => {
+    setFormData({ ...formData, [field]: value })
+  }
+
+  const adjustNumber = (field, amount) => {
+    const currentValue = parseInt(formData[field]) || 0
+    const newValue = Math.max(0, currentValue + amount)
+    setFormData({ ...formData, [field]: newValue })
+  }
+
+  // --- LOGIC: Restored your preferred calculation ---
+  const calculateGoal = (weight, age, gender, climate, activity) => {
+    let goalInOz = 0
+    const w = parseFloat(weight) || 0 // Safety check for NaN
+
+    if (age >= 14) {
+      if (gender === 'male') goalInOz = w * 0.67
+      else goalInOz = w * 0.5
+    } else {
+      goalInOz = 32
+    }
+    
+    if (activity === 'sedentary') goalInOz += 6
+    if (activity === 'moderate') goalInOz += 12
+    if (activity === 'active') goalInOz += 24
+    if (climate === 'hot') goalInOz += 12
+    
+    return Math.round(goalInOz)
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
 
-    const recommendedGoal = calculateGoal()
+    const dailyGoal = calculateGoal(formData.weight, formData.age, formData.gender, formData.climate, formData.activity)
 
-    const updates = {
-      id: user.id,
-      age: parseInt(age) || 0,
-      gender: gender,
-      weight: parseFloat(weight) || 0,
-      activity_level: activityLevel,
-      climate: climate,
-      daily_goal_oz: recommendedGoal,
-      updated_at: new Date()
-    }
+    const { error } = await supabase.from('profiles').upsert({
+        id: user.id,
+        weight: parseFloat(formData.weight) || 0,
+        age: parseInt(formData.age) || 0,
+        gender: formData.gender,
+        climate: formData.climate,
+        activity_level: formData.activity,
+        daily_goal_oz: dailyGoal,
+        updated_at: new Date()
+    })
 
-    const { error } = await supabase
-      .from('profiles')
-      .upsert(updates) 
-
-    setLoading(false)
-    if (!error) {
-      if (onComplete) onComplete() 
-      else onClose()
-    } else {
-      alert('Error saving. Please verify "profiles" table has all columns (age, gender, etc).')
+    if (error) {
+      alert('Error saving profile! Please check database columns.')
       console.error(error)
+    } else {
+      if (onComplete) onComplete()
+      else onClose()
     }
+    setLoading(false)
   }
 
   // --- STYLES ---
   const styles = {
     container: {
-        background: 'rgba(15, 23, 42, 0.95)',
-        backdropFilter: 'blur(10px)',
-        padding: '40px',
-        borderRadius: '24px',
-        width: '100%',
-        maxWidth: '500px',
-        border: '1px solid rgba(255,255,255,0.1)',
-        boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
-        position: 'relative',
-        maxHeight: '90vh',
-        overflowY: 'auto'
+      width: '100%',
+      maxWidth: '500px',
+      background: 'rgba(255, 255, 255, 0.03)',
+      backdropFilter: 'blur(20px)',
+      borderRadius: '32px',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      padding: '40px',
+      boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
+      position: 'relative',
+      textAlign: 'left',
     },
+    header: { textAlign: 'center', marginBottom: '10px' },
+    headerRow: { display: 'flex', justifyContent: 'flex-end' },
+    closeBtn: { color: 'rgba(255,255,255,0.4)', background: 'transparent', border: 'none', cursor: 'pointer' },
     label: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        fontSize: '12px',
-        fontWeight: 'bold',
-        color: '#94a3b8',
-        marginBottom: '6px',
-        textTransform: 'uppercase',
-        letterSpacing: '1px',
-        marginTop: '16px'
+        display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255,255,255,0.7)',
+        fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', marginTop: '20px'
     },
+    inputWrapper: { position: 'relative', width: '100%' },
     input: {
-        width: '100%',
-        background: 'rgba(0,0,0,0.3)',
-        border: '1px solid rgba(255,255,255,0.1)',
-        padding: '14px',
-        borderRadius: '12px',
-        color: 'white',
-        fontSize: '16px',
-        outline: 'none',
-        transition: 'border-color 0.2s',
+        width: '100%', padding: '14px', borderRadius: '12px', background: 'rgba(0, 0, 0, 0.3)',
+        border: '1px solid rgba(255, 255, 255, 0.1)', color: 'white', fontSize: '16px', outline: 'none',
+        MozAppearance: 'textfield' 
     },
-    // WRAPPER for custom Selects
-    selectWrapper: {
-        position: 'relative',
-        width: '100%',
-    },
-    select: {
-        width: '100%',
-        background: 'rgba(0,0,0,0.3)',
-        border: '1px solid rgba(255,255,255,0.1)',
-        padding: '14px',
-        paddingRight: '40px', 
-        borderRadius: '12px',
-        color: 'white',
-        fontSize: '16px',
-        outline: 'none',
-        cursor: 'pointer',
-        // FORCE HIDE BROWSER ARROW
-        appearance: 'none',
-        MozAppearance: 'none',
-        WebkitAppearance: 'none',
-    },
-    // CUSTOM ARROW ICON
-    selectIcon: {
-        position: 'absolute',
-        right: '14px',
-        top: '50%',
-        transform: 'translateY(-50%)',
-        pointerEvents: 'none', // Allows clicking "through" the icon to the select
-        color: '#22d3ee',      // Cyan-400 (Make it glow!)
-        zIndex: 10,
+    spinners: { position: 'absolute', right: '4px', top: '4px', bottom: '4px', display: 'flex', flexDirection: 'column', gap: '2px' },
+    spinBtn: {
+        background: 'rgba(255, 255, 255, 0.05)', border: 'none', color: 'rgba(255, 255, 255, 0.6)',
+        borderRadius: '6px', padding: '0 6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '50%'
     },
     saveBtn: {
-        width: '100%',
-        padding: '16px',
-        borderRadius: '12px',
-        background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
-        color: 'white',
-        border: 'none',
-        fontSize: '16px',
-        fontWeight: 'bold',
-        cursor: 'pointer',
-        boxShadow: '0 4px 15px rgba(6, 182, 212, 0.4)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '10px',
-        marginTop: '30px'
+        width: '100%', padding: '16px', borderRadius: '16px', background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+        color: 'white', fontWeight: 'bold', fontSize: '16px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 15px rgba(6, 182, 212, 0.3)', marginTop: '40px', transition: 'transform 0.2s'
     },
-    closeBtn: {
-        position: 'absolute',
-        top: '20px',
-        right: '20px',
-        background: 'transparent',
-        border: 'none',
-        color: 'rgba(255,255,255,0.5)',
-        cursor: 'pointer',
-    },
-    row: {
-        display: 'flex',
-        gap: '16px',
-    },
-    col: {
-        flex: 1
-    }
+    row: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }
   }
 
   return (
     <div style={styles.container}>
-      {onClose && (
-        <button onClick={onClose} style={styles.closeBtn}>
-            <X size={24} />
-        </button>
-      )}
+        <style jsx>{`
+            /* Chrome, Safari, Edge, Opera */
+            input[type=number]::-webkit-inner-spin-button, 
+            input[type=number]::-webkit-outer-spin-button { 
+                -webkit-appearance: none; 
+                margin: 0; 
+            }
+            
+            /* Firefox Specific Rule */
+            input[type=number] {
+                -moz-appearance: textfield;
+            }
 
-      <h2 className="text-2xl font-black text-white mb-2 text-center">Setup Profile</h2>
-      <p className="text-slate-400 text-center text-sm mb-6">Let's calculate your ideal hydration goal.</p>
-
-      <form onSubmit={handleSave}>
+            @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        `}</style>
         
-        {/* ROW 1: Age & Gender */}
-        <div style={styles.row}>
-            <div style={styles.col}>
-                <label style={styles.label}>
-                    <Calendar size={14} className="text-cyan-400" /> Age
-                </label>
-                <input 
-                    type="number" 
-                    placeholder="30"
-                    value={age}
-                    onChange={(e) => setAge(e.target.value)}
-                    style={styles.input}
-                    required
-                />
-            </div>
-            <div style={styles.col}>
-                <label style={styles.label}>
-                    <Droplets size={14} className="text-cyan-400" /> Gender
-                </label>
-                <div style={styles.selectWrapper}>
-                    <select 
-                        value={gender}
-                        onChange={(e) => setGender(e.target.value)}
-                        style={styles.select}
-                    >
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                    </select>
-                    <ChevronDown size={20} style={styles.selectIcon} />
+        <div style={styles.headerRow}>
+            {onClose && (
+                <button onClick={onClose} style={styles.closeBtn} className="hover:text-white"><X size={24} /></button>
+            )}
+        </div>
+
+        <div style={styles.header}>
+            <h2 className="text-3xl font-black text-white tracking-tight mb-2">Update Settings</h2>
+            <p className="text-white/50 text-sm">We'll calculate your ideal hydration based on your profile.</p>
+        </div>
+        
+        <form onSubmit={handleSubmit}>
+            
+            {/* ROW 1: Numbers (Weight/Age) */}
+            <div style={styles.row}>
+                <div>
+                    <label style={styles.label}><Weight size={14} className="text-cyan-400"/> Weight (lbs)</label>
+                    <div style={styles.inputWrapper}>
+                        <input type="number" value={formData.weight} onChange={(e) => handleChange('weight', e.target.value)} style={styles.input} placeholder="160" />
+                        <div style={styles.spinners}>
+                            <button type="button" onClick={() => adjustNumber('weight', 1)} style={styles.spinBtn} className="hover:bg-white/10"><ChevronUp size={12} /></button>
+                            <button type="button" onClick={() => adjustNumber('weight', -1)} style={styles.spinBtn} className="hover:bg-white/10"><ChevronDown size={12} /></button>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label style={styles.label}><Calendar size={14} className="text-cyan-400"/> Age</label>
+                    <div style={styles.inputWrapper}>
+                        <input type="number" value={formData.age} onChange={(e) => handleChange('age', e.target.value)} style={styles.input} placeholder="25" />
+                        <div style={styles.spinners}>
+                            <button type="button" onClick={() => adjustNumber('age', 1)} style={styles.spinBtn} className="hover:bg-white/10"><ChevronUp size={12} /></button>
+                            <button type="button" onClick={() => adjustNumber('age', -1)} style={styles.spinBtn} className="hover:bg-white/10"><ChevronDown size={12} /></button>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        {/* ROW 2: Weight */}
-        <label style={styles.label}>
-            <User size={14} className="text-cyan-400" /> Weight (lbs)
-        </label>
-        <input 
-            type="number" 
-            placeholder="e.g. 160"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-            style={styles.input}
-            required
-        />
+            {/* ROW 2: Custom Dropdowns */}
+            <div style={styles.row}>
+                <GlassDropdown 
+                    label="Gender" icon={User} value={formData.gender} onChange={(val) => handleChange('gender', val)}
+                    options={[
+                        { label: 'Male', value: 'male' },
+                        { label: 'Female', value: 'female' }
+                    ]}
+                />
+                <GlassDropdown 
+                    label="Climate" icon={Thermometer} value={formData.climate} onChange={(val) => handleChange('climate', val)}
+                    options={[
+                        { label: 'Hot', value: 'hot' },
+                        { label: 'Moderate', value: 'moderate' },
+                        { label: 'Cold', value: 'cold' }
+                    ]}
+                />
+            </div>
 
-        {/* ROW 3: Activity Level */}
-        <label style={styles.label}>
-            <Activity size={14} className="text-cyan-400" /> Activity Level
-        </label>
-        <div style={styles.selectWrapper}>
-            <select 
-                value={activityLevel}
-                onChange={(e) => setActivityLevel(e.target.value)}
-                style={styles.select}
-            >
-                <option value="sedentary">Sedentary (Base)</option>
-                <option value="light">Light (+6 oz)</option>
-                <option value="moderate">Moderate (+12 oz)</option>
-                <option value="high">High (+24 oz)</option>
-                <option value="extreme">Extreme (+32 oz)</option>
-            </select>
-            <ChevronDown size={20} style={styles.selectIcon} />
-        </div>
+            {/* ROW 3: Activity Dropdown */}
+            <GlassDropdown 
+                label="Activity Level" icon={Activity} value={formData.activity} onChange={(val) => handleChange('activity', val)}
+                options={[
+                    { label: 'Sedentary (Light)', value: 'sedentary' },
+                    { label: 'Moderate', value: 'moderate' },
+                    { label: 'Active (High)', value: 'active' }
+                ]}
+            />
 
-        {/* ROW 4: Climate */}
-        <label style={styles.label}>
-            <Thermometer size={14} className="text-cyan-400" /> Environment
-        </label>
-        <div style={styles.selectWrapper}>
-            <select 
-                value={climate}
-                onChange={(e) => setClimate(e.target.value)}
-                style={styles.select}
-            >
-                <option value="temperate">Temperate (Average)</option>
-                <option value="hot">Tropical / Hot (+12 oz)</option>
-            </select>
-            <ChevronDown size={20} style={styles.selectIcon} />
-        </div>
-
-        <button type="submit" style={styles.saveBtn} disabled={loading}>
-            {loading ? 'Saving...' : <><Save size={20} /> Save & Calculate</>}
-        </button>
-
-      </form>
+            <button type="submit" disabled={loading} style={styles.saveBtn} className="hover:scale-[1.02] active:scale-95">
+                {loading ? 'Calculating...' : 'Recalculate Goal'}
+            </button>
+        </form>
     </div>
   )
 }
