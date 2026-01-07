@@ -6,7 +6,7 @@ import HydrationTracker from '../components/HydrationTracker'
 import HistoryCalendar from '../components/HistoryCalendar'
 import BottleRecommender from '../components/BottleRecommender' 
 import OnboardingForm from '../components/OnboardingForm'
-import { SlidersHorizontal, LogOut, X, Sparkles } from 'lucide-react'
+import { SlidersHorizontal, LogOut, Sparkles } from 'lucide-react'
 
 export default function Home() {
   const [session, setSession] = useState(null)
@@ -33,10 +33,23 @@ export default function Home() {
   }, [])
 
   const fetchProfile = async (userId) => {
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
+    // UPDATED: Use maybeSingle() to avoid 406 errors if row is missing
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle()
+
     if (data) {
+        // User exists: Load their data
         setDailyGoal(data.daily_goal_oz || 100) 
         setUserProfile(data)
+    } else {
+        // User does NOT exist (New User):
+        // 1. Set default profile state to null
+        setUserProfile(null)
+        // 2. Automatically open the onboarding modal
+        setShowGoalModal(true)
     }
   }
 
@@ -46,7 +59,7 @@ export default function Home() {
   const styles = {
     main: {
       minHeight: '100vh',
-      background: 'transparent', // Let the global gradient show through
+      background: 'transparent',
       padding: '40px 20px',
       fontFamily: 'sans-serif',
       color: 'white',
@@ -158,7 +171,7 @@ export default function Home() {
     <main style={styles.main}>
       
       <div style={styles.header}>
-        <div style={styles.logo}>💧 HydroGuide TEST</div>
+        <div style={styles.logo}>💧 HydroGuide</div>
         <button 
           onClick={() => supabase.auth.signOut()} 
           style={styles.signOutBtn}
