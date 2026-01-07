@@ -4,38 +4,56 @@ import { supabase } from '../lib/supabaseClient'
 import { X, Save, Activity, Thermometer, User, Calendar, Droplets, ChevronDown } from 'lucide-react'
 
 export default function OnboardingForm({ user, initialData, onClose, onComplete }) {
-  // --- SAFETY CHECK: Handle null data for new users ---
+  // --- SAFETY: Ensure we never read properties of null ---
   const safeData = initialData || {}
 
   // --- STATE ---
   const [age, setAge] = useState(safeData.age || '')
   const [gender, setGender] = useState(safeData.gender || 'Male')
   const [weight, setWeight] = useState(safeData.weight || '')
-  const [activityLevel, setActivityLevel] = useState(safeData.activity_level || 'moderate')
+  // Default to 'sedentary' (0 extra) if nothing saved
+  const [activityLevel, setActivityLevel] = useState(safeData.activity_level || 'sedentary')
   const [climate, setClimate] = useState(safeData.climate || 'temperate')
   const [loading, setLoading] = useState(false)
 
-  // --- CALCULATE GOAL ---
+  // --- CALCULATE GOAL (Based on Flowchart) ---
   const calculateGoal = () => {
-    // Base: 0.5 oz per lb of body weight
-    const w = parseFloat(weight) || 150
-    let goal = w * 0.5 
+    const ageVal = parseInt(age) || 0
+    const weightVal = parseFloat(weight) || 0
+    let goal = 0
 
-    // Activity Adjustments
-    if (activityLevel === 'high') goal += 20 
-    if (activityLevel === 'moderate') goal += 10 
-    
-    // Climate Adjustments
-    if (climate === 'hot') goal += 15 
-    if (climate === 'cold') goal -= 5 
-    
-    // Age Adjustments 
-    const a = parseInt(age) || 30
-    if (a > 55) goal *= 0.95 
+    // --- STEP 1: CHILD LOGIC (< 14 Years) ---
+    // [cite: 29, 37, 41, 43]
+    if (ageVal > 0 && ageVal < 14) {
+        if (ageVal < 1) return 32       // [cite: 50]
+        if (ageVal < 4) return 40       // [cite: 48]
+        if (ageVal < 9) return 56       // [cite: 47]
+        return 64                       // Standard for 9-13
+    }
 
-    // Gender Adjustments 
-    if (gender === 'Male') goal += 5
-    if (gender === 'Female') goal -= 5
+    // --- STEP 2: ADULT BASE LOGIC (>= 14 Years) ---
+    // 
+    if (gender === 'Male') {
+        goal = weightVal * 0.67 // Male Multiplier [cite: 36]
+    } else {
+        goal = weightVal * 0.50 // Female/Other Multiplier [cite: 51]
+    }
+
+    // --- STEP 3: ACTIVITY ADD-ONS ---
+    // [cite: 57, 60, 64, 68, 70, 71]
+    switch (activityLevel) {
+        case 'light':      goal += 6;  break; // [cite: 60]
+        case 'moderate':   goal += 12; break; // [cite: 68] assuming diagram flow
+        case 'high':       goal += 24; break; // [cite: 70]
+        case 'extreme':    goal += 32; break; // [cite: 71]
+        case 'sedentary':  goal += 0;  break; // Base
+    }
+
+    // --- STEP 4: CLIMATE ADD-ONS ---
+    // [cite: 61, 74]
+    if (climate === 'hot') {
+        goal += 12 // "Tropical" adds 12 oz [cite: 74]
+    }
 
     return Math.round(goal)
   }
@@ -67,7 +85,7 @@ export default function OnboardingForm({ user, initialData, onClose, onComplete 
       if (onComplete) onComplete() 
       else onClose()
     } else {
-      alert('Error saving profile! Check if "age" and "gender" columns exist in Supabase.')
+      alert('Error saving. Please verify "profiles" table has all columns (age, gender, etc).')
       console.error(error)
     }
   }
@@ -120,25 +138,26 @@ export default function OnboardingForm({ user, initialData, onClose, onComplete 
         background: 'rgba(0,0,0,0.3)',
         border: '1px solid rgba(255,255,255,0.1)',
         padding: '14px',
-        paddingRight: '40px', // Space for the arrow
+        paddingRight: '40px', 
         borderRadius: '12px',
         color: 'white',
         fontSize: '16px',
         outline: 'none',
         cursor: 'pointer',
-        // THE FIREFOX & BROWSER FIXES:
+        // FORCE HIDE BROWSER ARROW
         appearance: 'none',
         MozAppearance: 'none',
         WebkitAppearance: 'none',
     },
-    // Custom Arrow Icon positioned absolutely
+    // CUSTOM ARROW ICON
     selectIcon: {
         position: 'absolute',
         right: '14px',
         top: '50%',
         transform: 'translateY(-50%)',
-        pointerEvents: 'none', // Clicks pass through to the select
-        color: 'rgba(255,255,255,0.4)'
+        pointerEvents: 'none', // Allows clicking "through" the icon to the select
+        color: '#22d3ee',      // Cyan-400 (Make it glow!)
+        zIndex: 10,
     },
     saveBtn: {
         width: '100%',
@@ -177,9 +196,11 @@ export default function OnboardingForm({ user, initialData, onClose, onComplete 
 
   return (
     <div style={styles.container}>
-      <button onClick={onClose} style={styles.closeBtn}>
-        <X size={24} />
-      </button>
+      {onClose && (
+        <button onClick={onClose} style={styles.closeBtn}>
+            <X size={24} />
+        </button>
+      )}
 
       <h2 className="text-2xl font-black text-white mb-2 text-center">Setup Profile</h2>
       <p className="text-slate-400 text-center text-sm mb-6">Let's calculate your ideal hydration goal.</p>
@@ -213,9 +234,8 @@ export default function OnboardingForm({ user, initialData, onClose, onComplete 
                     >
                         <option value="Male">Male</option>
                         <option value="Female">Female</option>
-                        <option value="Other">Other</option>
                     </select>
-                    <ChevronDown size={16} style={styles.selectIcon} />
+                    <ChevronDown size={20} style={styles.selectIcon} />
                 </div>
             </div>
         </div>
@@ -243,11 +263,13 @@ export default function OnboardingForm({ user, initialData, onClose, onComplete 
                 onChange={(e) => setActivityLevel(e.target.value)}
                 style={styles.select}
             >
-                <option value="low">Low (Sedentary)</option>
-                <option value="moderate">Moderate (Light Exercise)</option>
-                <option value="high">High (Athlete/Active Job)</option>
+                <option value="sedentary">Sedentary (Base)</option>
+                <option value="light">Light (+6 oz)</option>
+                <option value="moderate">Moderate (+12 oz)</option>
+                <option value="high">High (+24 oz)</option>
+                <option value="extreme">Extreme (+32 oz)</option>
             </select>
-            <ChevronDown size={16} style={styles.selectIcon} />
+            <ChevronDown size={20} style={styles.selectIcon} />
         </div>
 
         {/* ROW 4: Climate */}
@@ -261,10 +283,9 @@ export default function OnboardingForm({ user, initialData, onClose, onComplete 
                 style={styles.select}
             >
                 <option value="temperate">Temperate (Average)</option>
-                <option value="hot">Hot / Humid</option>
-                <option value="cold">Cold / Dry</option>
+                <option value="hot">Tropical / Hot (+12 oz)</option>
             </select>
-            <ChevronDown size={16} style={styles.selectIcon} />
+            <ChevronDown size={20} style={styles.selectIcon} />
         </div>
 
         <button type="submit" style={styles.saveBtn} disabled={loading}>
