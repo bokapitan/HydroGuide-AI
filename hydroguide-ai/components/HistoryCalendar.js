@@ -100,14 +100,17 @@ export default function HistoryCalendar({ user, dailyGoal, refreshTrigger }) {
         }
     },
     footer: {
-      display: 'flex', justifyContent: 'center', gap: '20px', 
+      display: 'flex', justifyContent: 'center', gap: '16px', // Reduced gap slightly to fit 4 items
       marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.1)'
     },
-    legendItem: { display: 'flex', alignItems: 'center', gap: '8px' },
+    legendItem: { display: 'flex', alignItems: 'center', gap: '6px' },
+    
+    // UPDATED LEGEND BOX LOGIC
     legendBox: (type) => {
         let bg, border;
         if (type === 'empty') { bg = 'rgba(255, 255, 255, 0.05)'; border = 'rgba(255, 255, 255, 0.1)'; } 
         else if (type === 'track') { bg = 'rgba(6, 182, 212, 0.25)'; border = 'rgba(6, 182, 212, 0.5)'; } 
+        else if (type === 'met') { bg = 'rgba(16, 185, 129, 0.3)'; border = 'rgba(16, 185, 129, 0.8)'; } // <-- ADDED MET
         else if (type === 'locked') { bg = 'rgba(0, 0, 0, 0.2)'; border = 'rgba(255, 255, 255, 0.05)'; }
         
         return {
@@ -185,12 +188,16 @@ export default function HistoryCalendar({ user, dailyGoal, refreshTrigger }) {
         </div>
         <div style={styles.legendItem}>
             <div style={styles.legendBox('track')}></div>
-            <span className="text-[9px] uppercase text-white/60 font-bold">Tracked</span>
+            <span className="text-[9px] uppercase text-white/60 font-bold">Started</span>
+        </div>
+        <div style={styles.legendItem}>
+            <div style={styles.legendBox('met')}></div>
+            <span className="text-[9px] uppercase text-emerald-400 font-bold">Goal Met</span>
         </div>
         {!isPro && (
             <div style={styles.legendItem}>
                 <div style={styles.legendBox('locked')}></div>
-                <span className="text-[9px] uppercase text-white/40 font-bold">History Locked</span>
+                <span className="text-[9px] uppercase text-white/40 font-bold">Locked</span>
             </div>
         )}
       </div>
