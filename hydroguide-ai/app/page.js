@@ -158,7 +158,7 @@ export default function Home() {
     <main style={styles.main}>
       
       <div style={styles.header}>
-        <div style={styles.logo}>💧 HydroGuide</div>
+        <div style={styles.logo}>💧 HydroGuide TEST</div>
         <button 
           onClick={() => supabase.auth.signOut()} 
           style={styles.signOutBtn}
