@@ -1,30 +1,46 @@
 'use client'
 import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import { X, Save, Activity, Thermometer, User } from 'lucide-react'
+import { X, Save, Activity, Thermometer, User, Calendar, Droplets } from 'lucide-react'
 
 export default function OnboardingForm({ user, initialData, onClose, onComplete }) {
-  // --- SAFETY FIX: Default to empty object if initialData is null ---
+  // --- SAFETY CHECK: Handle null data for new users ---
   const safeData = initialData || {}
 
+  // --- STATE ---
+  const [age, setAge] = useState(safeData.age || '')
+  const [gender, setGender] = useState(safeData.gender || 'Male')
   const [weight, setWeight] = useState(safeData.weight || '')
   const [activityLevel, setActivityLevel] = useState(safeData.activity_level || 'moderate')
   const [climate, setClimate] = useState(safeData.climate || 'temperate')
   const [loading, setLoading] = useState(false)
 
+  // --- CALCULATE GOAL ---
   const calculateGoal = () => {
+    // Base: 0.5 oz per lb of body weight
     const w = parseFloat(weight) || 150
-    let goal = w * 0.5 // Baseline: 0.5 oz per lb
+    let goal = w * 0.5 
 
-    if (activityLevel === 'high') goal += 20
-    if (activityLevel === 'low') goal -= 10
+    // Activity Adjustments
+    if (activityLevel === 'high') goal += 20 // Heavy exercise
+    if (activityLevel === 'moderate') goal += 10 // Light exercise
     
-    if (climate === 'hot') goal += 15
-    if (climate === 'cold') goal -= 5
+    // Climate Adjustments
+    if (climate === 'hot') goal += 15 // Sweating more
+    if (climate === 'cold') goal -= 5 // Less evaporation, though still need hydration
+    
+    // Age Adjustments (Metabolism slows slightly with age)
+    const a = parseInt(age) || 30
+    if (a > 55) goal *= 0.95 
+
+    // Gender Adjustments (Men typically have higher muscle mass = more water)
+    if (gender === 'Male') goal += 5
+    if (gender === 'Female') goal -= 5
 
     return Math.round(goal)
   }
 
+  // --- SAVE TO DB ---
   const handleSave = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -33,6 +49,8 @@ export default function OnboardingForm({ user, initialData, onClose, onComplete 
 
     const updates = {
       id: user.id,
+      age: parseInt(age) || 0,
+      gender: gender,
       weight: parseFloat(weight) || 0,
       activity_level: activityLevel,
       climate: climate,
@@ -40,16 +58,17 @@ export default function OnboardingForm({ user, initialData, onClose, onComplete 
       updated_at: new Date()
     }
 
+    // .upsert() creates the row if it doesn't exist, or updates it if it does
     const { error } = await supabase
       .from('profiles')
-      .upsert(updates) // .upsert() will create the row if it's missing!
+      .upsert(updates) 
 
     setLoading(false)
     if (!error) {
-      if (onComplete) onComplete()
+      if (onComplete) onComplete() // Refresh parent data
       else onClose()
     } else {
-      alert('Error saving profile!')
+      alert('Error saving profile! Check if "age" and "gender" columns exist in Supabase.')
       console.error(error)
     }
   }
@@ -65,28 +84,30 @@ export default function OnboardingForm({ user, initialData, onClose, onComplete 
         maxWidth: '500px',
         border: '1px solid rgba(255,255,255,0.1)',
         boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
-        position: 'relative'
+        position: 'relative',
+        maxHeight: '90vh',
+        overflowY: 'auto' // Scroll if screen is short
     },
     label: {
         display: 'flex',
         alignItems: 'center',
         gap: '10px',
-        fontSize: '14px',
+        fontSize: '12px',
         fontWeight: 'bold',
         color: '#94a3b8',
-        marginBottom: '8px',
+        marginBottom: '6px',
         textTransform: 'uppercase',
-        letterSpacing: '1px'
+        letterSpacing: '1px',
+        marginTop: '16px'
     },
     input: {
         width: '100%',
         background: 'rgba(0,0,0,0.3)',
         border: '1px solid rgba(255,255,255,0.1)',
-        padding: '16px',
+        padding: '14px',
         borderRadius: '12px',
         color: 'white',
         fontSize: '16px',
-        marginBottom: '24px',
         outline: 'none',
         transition: 'border-color 0.2s',
     },
@@ -94,11 +115,10 @@ export default function OnboardingForm({ user, initialData, onClose, onComplete 
         width: '100%',
         background: 'rgba(0,0,0,0.3)',
         border: '1px solid rgba(255,255,255,0.1)',
-        padding: '16px',
+        padding: '14px',
         borderRadius: '12px',
         color: 'white',
         fontSize: '16px',
-        marginBottom: '24px',
         outline: 'none',
         appearance: 'none', 
         cursor: 'pointer'
@@ -118,7 +138,7 @@ export default function OnboardingForm({ user, initialData, onClose, onComplete 
         alignItems: 'center',
         justifyContent: 'center',
         gap: '10px',
-        marginTop: '10px'
+        marginTop: '30px'
     },
     closeBtn: {
         position: 'absolute',
@@ -128,6 +148,13 @@ export default function OnboardingForm({ user, initialData, onClose, onComplete 
         border: 'none',
         color: 'rgba(255,255,255,0.5)',
         cursor: 'pointer',
+    },
+    row: {
+        display: 'flex',
+        gap: '16px',
+    },
+    col: {
+        flex: 1
     }
   }
 
@@ -137,13 +164,45 @@ export default function OnboardingForm({ user, initialData, onClose, onComplete 
         <X size={24} />
       </button>
 
-      <h2 className="text-2xl font-black text-white mb-6 text-center">Personalize Your Plan</h2>
+      <h2 className="text-2xl font-black text-white mb-2 text-center">Setup Profile</h2>
+      <p className="text-slate-400 text-center text-sm mb-6">Let's calculate your ideal hydration goal.</p>
 
       <form onSubmit={handleSave}>
         
-        {/* WEIGHT INPUT */}
+        {/* ROW 1: Age & Gender */}
+        <div style={styles.row}>
+            <div style={styles.col}>
+                <label style={styles.label}>
+                    <Calendar size={14} className="text-cyan-400" /> Age
+                </label>
+                <input 
+                    type="number" 
+                    placeholder="30"
+                    value={age}
+                    onChange={(e) => setAge(e.target.value)}
+                    style={styles.input}
+                    required
+                />
+            </div>
+            <div style={styles.col}>
+                <label style={styles.label}>
+                    <Droplets size={14} className="text-cyan-400" /> Gender
+                </label>
+                <select 
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value)}
+                    style={styles.select}
+                >
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+        </div>
+
+        {/* ROW 2: Weight */}
         <label style={styles.label}>
-            <User size={16} className="text-cyan-400" /> Weight (lbs)
+            <User size={14} className="text-cyan-400" /> Weight (lbs)
         </label>
         <input 
             type="number" 
@@ -152,48 +211,38 @@ export default function OnboardingForm({ user, initialData, onClose, onComplete 
             onChange={(e) => setWeight(e.target.value)}
             style={styles.input}
             required
-            onFocus={(e) => e.target.style.borderColor = '#22d3ee'}
-            onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
         />
 
-        {/* ACTIVITY LEVEL */}
+        {/* ROW 3: Activity Level */}
         <label style={styles.label}>
-            <Activity size={16} className="text-cyan-400" /> Activity Level
+            <Activity size={14} className="text-cyan-400" /> Activity Level
         </label>
-        <div className="relative">
-            <select 
-                value={activityLevel}
-                onChange={(e) => setActivityLevel(e.target.value)}
-                style={styles.select}
-                onFocus={(e) => e.target.style.borderColor = '#22d3ee'}
-                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
-            >
-                <option value="low">Low (Sedentary)</option>
-                <option value="moderate">Moderate (Light Exercise)</option>
-                <option value="high">High (Athlete/Active Job)</option>
-            </select>
-        </div>
+        <select 
+            value={activityLevel}
+            onChange={(e) => setActivityLevel(e.target.value)}
+            style={styles.select}
+        >
+            <option value="low">Low (Sedentary)</option>
+            <option value="moderate">Moderate (Light Exercise)</option>
+            <option value="high">High (Athlete/Active Job)</option>
+        </select>
 
-        {/* CLIMATE */}
+        {/* ROW 4: Climate */}
         <label style={styles.label}>
-            <Thermometer size={16} className="text-cyan-400" /> Environment
+            <Thermometer size={14} className="text-cyan-400" /> Environment
         </label>
-        <div className="relative">
-            <select 
-                value={climate}
-                onChange={(e) => setClimate(e.target.value)}
-                style={styles.select}
-                onFocus={(e) => e.target.style.borderColor = '#22d3ee'}
-                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
-            >
-                <option value="temperate">Temperate (Average)</option>
-                <option value="hot">Hot / Humid</option>
-                <option value="cold">Cold / Dry</option>
-            </select>
-        </div>
+        <select 
+            value={climate}
+            onChange={(e) => setClimate(e.target.value)}
+            style={styles.select}
+        >
+            <option value="temperate">Temperate (Average)</option>
+            <option value="hot">Hot / Humid</option>
+            <option value="cold">Cold / Dry</option>
+        </select>
 
         <button type="submit" style={styles.saveBtn} disabled={loading}>
-            {loading ? 'Saving...' : <><Save size={20} /> Save & Calculate Goal</>}
+            {loading ? 'Saving...' : <><Save size={20} /> Save & Calculate</>}
         </button>
 
       </form>
