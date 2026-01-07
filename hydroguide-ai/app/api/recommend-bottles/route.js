@@ -4,6 +4,20 @@ import { NextResponse } from 'next/server'
 
 export async function POST(req) {
   try {
+
+
+
+      // 1. Check for API Key
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        return NextResponse.json(
+          { error: "GEMINI_API_KEY is missing from environment variables." },
+          { status: 500 }
+        );
+      }
+
+
+
     const { activity, climate, goal } = await req.json()
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
